@@ -9,23 +9,13 @@ export async function fetchDummyHeatmap() {
   return dummyData
 }
 
-export async function fetchHeatmap(selection: HeatmapRange) {
+export async function fetchHeatmap(selection?: HeatmapRange) {
   let url = `${APIURL}/heatmaps?type=write_bytes`
 
-  if (selection.startTime) {
-    url += `&startTime=${selection.startTime}`
-  }
-
-  if (selection.endTime) {
-    url += `&endTime=${selection.endTime}`
-  }
-
-  if (selection.startKey) {
-    url += `&startKey=${selection.startKey}`
-  }
-
-  if (selection.endKey) {
-    url += `&endKey=${selection.endKey}`
+  if (selection) {
+    url += Object.keys(selection)
+      .map(k => `&${k}=${selection[k]}`)
+      .join('')
   }
 
   const data: HeatmapData = await sendRequest(url, 'get')

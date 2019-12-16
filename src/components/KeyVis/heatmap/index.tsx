@@ -18,17 +18,18 @@ export type HeatmapData = {
   timeAxis: number[]
   keyAxis: KeyAxisEntry[]
   data: {
-    integration: number[][],
-    written_bytes: number[][],
-    read_bytes: number[][],
-    written_keys: number[][],
-    read_keys: number[][],
-  },
+    integration: number[][]
+    written_bytes: number[][]
+    read_bytes: number[][]
+    written_keys: number[][]
+    read_keys: number[][]
+  }
 }
 
 type HeatmapProps = {
   data: HeatmapData
   onBrush: (selection: HeatmapRange) => void
+  onChartInit: (any) => void
 }
 
 export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
@@ -38,6 +39,7 @@ export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
   useEffect(() => {
     chart = heatmapChart(props.onBrush)
     chart.data(props.data)
+    props.onChartInit(chart)
   }, [props.data])
 
   useEffect(() => {
