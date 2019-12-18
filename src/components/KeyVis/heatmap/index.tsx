@@ -66,7 +66,7 @@ export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
       <button style={{ margin: 20, display: 'block' }} onClick={onZoomClick}>
         Zoom
       </button>
-      <div ref={divRef} style={{ width: '100%', height: 700 }} />
+      <div className="heatmap" ref={divRef} />
     </>
   )
 }
