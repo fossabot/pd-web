@@ -4,13 +4,6 @@
   width: 100%;
   height: calc(100vh - 170px);
 
-  svg {
-    cursor: default;
-    user-select: none;
-    transform:translateZ(0);
-    will-change: contents;
-  }
-
   .tooltip {
     padding: 10px;
     color: #eee;

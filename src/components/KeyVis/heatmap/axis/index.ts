@@ -2,6 +2,7 @@ export type Section<T, U> = {
   val: T
   start: U
   end: U
+  idx: number
 }
 
 const mergeWidth = 3
@@ -14,6 +15,7 @@ export function scaleSections<T, U>(
 ): Section<T, number>[] {
   let result: Section<T, number>[] = []
   let mergedSmallSection: Section<T, number> | null = null
+  let oneSectionRendered = false
 
   for (const section of sections) {
     const canvasStart = range[0]
@@ -26,25 +28,25 @@ export function scaleSections<T, U>(
     if (mergedSmallSection) {
       if (
         mergedSmallSection.end - mergedSmallSection.start >= mergeWidth ||
-        commonStart - mergedSmallSection.end > mergeWidth
+        commonStart - mergedSmallSection.end > mergeWidth ||
+        (!oneSectionRendered && section.idx % 2 === 0)
       ) {
-        result.push({
-          val: merge(mergedSmallSection.val, section.val),
-          start: mergedSmallSection.start,
-          end: mergedSmallSection.end
-        })
+        result.push(mergedSmallSection)
+        oneSectionRendered = true
         mergedSmallSection = null
       }
     }
 
     if (commonEnd - commonStart > 0) {
       if (commonEnd - commonStart > mergeWidth) {
-        result.push({ val: section.val, start: commonStart, end: commonEnd })
+        result.push({ val: section.val, start: commonStart, end: commonEnd, idx: section.idx })
+        oneSectionRendered = true
         mergedSmallSection = null
       } else {
         if (mergedSmallSection === null) {
-          mergedSmallSection = { val: section.val, start: commonStart, end: commonEnd }
+          mergedSmallSection = { val: section.val, start: commonStart, end: commonEnd, idx: section.idx }
         } else {
+          mergedSmallSection.val = merge(mergedSmallSection.val, section.val)
           mergedSmallSection.end = commonEnd
         }
       }

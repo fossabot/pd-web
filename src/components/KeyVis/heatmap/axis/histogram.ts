@@ -37,14 +37,14 @@ export function histogram(data: number[][]) {
       for (let y = yStartIdx; y < yEndIdx; y++) {
         sumVal += data[x][y]
       }
-      xSum.push({ val: sumVal, start: x, end: x + 1 })
+      xSum.push({ val: sumVal, start: x, end: x + 1, idx: x })
     }
     for (let y = yStartIdx; y < yEndIdx; y++) {
       let sumVal = 0
       for (let x = xStartIdx; x < xEndIdx; x++) {
         sumVal += data[x][y]
       }
-      ySum.push({ val: sumVal, start: y, end: y + 1 })
+      ySum.push({ val: sumVal, start: y, end: y + 1, idx: y })
     }
 
     const xBins = scaleSections(xSum, xRange, xScale, (origin, val) => origin + val)

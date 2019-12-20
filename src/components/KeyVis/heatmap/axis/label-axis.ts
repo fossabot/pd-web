@@ -104,7 +104,8 @@ function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label<number>[][] {
           result[groupIdx].push({
             val: lastLabel,
             start: startKeyIdx,
-            end: keyIdx
+            end: keyIdx,
+            idx: startKeyIdx
           })
           startKeyIdx = null
         }
