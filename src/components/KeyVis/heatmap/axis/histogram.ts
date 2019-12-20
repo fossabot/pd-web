@@ -1,6 +1,11 @@
 import * as d3 from 'd3'
 import { Section, scaleSections } from '.'
 
+const xHeight = 30
+const yWidth = 30
+const fill = '#333'
+const stroke = '#fff'
+
 export function histogram(data: number[][]) {
   let xRange: [number, number] = [0, 0]
   let yRange: [number, number] = [0, 0]
@@ -23,7 +28,6 @@ export function histogram(data: number[][]) {
     const xEndIdx = Math.min(xLen - 1, Math.ceil(xScale.invert(xRange[1])))
     const yStartIdx = Math.max(0, Math.floor(yScale.invert(yRange[0])))
     const yEndIdx = Math.min(yLen - 1, Math.ceil(yScale.invert(yRange[1])))
-    if (yEndIdx < yStartIdx) debugger
 
     const xSum: Section<number, number>[] = []
     const ySum: Section<number, number>[] = []
@@ -49,32 +53,30 @@ export function histogram(data: number[][]) {
     const xBinsMax = d3.max(xBins, section => section.val)!
     const yBinsMax = d3.max(yBins, section => section.val)!
 
-    if (xBinsMax === 0) debugger
-
     let xRect = xG.selectAll('rect').data(xBins)
     xRect.exit().remove()
     xRect = xRect
       .enter()
       .append('rect')
-      .attr('stroke', '#fff')
-      .attr('fill', '#333')
+      .attr('stroke', stroke)
+      .attr('fill', fill)
       .merge(xRect)
       .attr('x', d => d.start)
-      .attr('y', d => 30 - (30 * d.val) / xBinsMax)
+      .attr('y', d => xHeight - (xHeight * d.val) / xBinsMax)
       .attr('width', d => d.end - d.start)
-      .attr('height', d => (30 * d.val) / xBinsMax)
+      .attr('height', d => (xHeight * d.val) / xBinsMax)
 
     let yRect = yG.selectAll('rect').data(yBins)
     yRect.exit().remove()
     yRect = yRect
       .enter()
       .append('rect')
-      .attr('stroke', '#fff')
-      .attr('fill', '#333')
+      .attr('stroke', stroke)
+      .attr('fill', fill)
       .merge(yRect)
-      .attr('x', d => 30 - (30 * d.val) / yBinsMax)
+      .attr('x', d => yWidth - (yWidth * d.val) / yBinsMax)
       .attr('y', d => d.start)
-      .attr('width', d => (30 * d.val) / yBinsMax)
+      .attr('width', d => (yWidth * d.val) / yBinsMax)
       .attr('height', d => d.end - d.start)
   }
 

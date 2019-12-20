@@ -8,6 +8,8 @@ const labelAxisMargin = 4
 const labelAxisWidth = 28
 const labelTextPadding = 4
 const minTextHeight = 17
+const fill = '#333'
+const stroke = '#fff'
 
 type Label<U> = Section<string, U>
 
@@ -54,9 +56,9 @@ function labelAxis(selection) {
     .append('rect')
     .attr('width', labelAxisWidth)
     .attr('x', 0)
-    .attr('stroke', '#fff')
+    .attr('stroke', stroke)
     .merge(rects)
-    .attr('fill', label => (shouleHideLabel(label) ? '#333' : '#333'))
+    .attr('fill', fill)
     .attr('y', label => label.start)
     .attr('height', label => label.end - label.start)
 
