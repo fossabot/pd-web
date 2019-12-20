@@ -102,25 +102,6 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   }
 
   function heatmapChart() {
-    let axis = container.selectAll('svg').data([null])
-    axis = axis
-      .enter()
-      .append('svg')
-      .style('position', 'absolute')
-      .merge(axis)
-      .style('width', width + 'px')
-      .style('height', height + 'px')
-
-    let tooltipLayer = container.selectAll('div').data([null])
-    tooltipLayer = tooltipLayer
-      .enter()
-      .append('div')
-      .style('position', 'absolute')
-      .style('pointer-events', 'none')
-      .merge(tooltipLayer)
-      .style('width', width + 'px')
-      .style('height', height + 'px')
-
     let xHistogramCanvas = container.selectAll('canvas.x-histogram').data([null])
     xHistogramCanvas = xHistogramCanvas
       .enter()
@@ -150,6 +131,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .enter()
       .append('canvas')
       .classed('heatmap', true)
+      .style('position', 'absolute')
       .merge(canvas)
       .attr('width', canvasWidth * MSAARatio)
       .attr('height', canvasHeight * MSAARatio)
@@ -159,6 +141,25 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('margin-right', margin.right + 'px')
       .style('margin-bottom', margin.bottom + 'px')
       .style('margin-left', margin.left + 'px')
+
+    let axis = container.selectAll('svg').data([null])
+    axis = axis
+      .enter()
+      .append('svg')
+      .style('position', 'absolute')
+      .merge(axis)
+      .style('width', width + 'px')
+      .style('height', height + 'px')
+
+    let tooltipLayer = container.selectAll('div').data([null])
+    tooltipLayer = tooltipLayer
+      .enter()
+      .append('div')
+      .style('position', 'absolute')
+      .style('pointer-events', 'none')
+      .merge(tooltipLayer)
+      .style('width', width + 'px')
+      .style('height', height + 'px')
 
     const ctx: CanvasRenderingContext2D = canvas.node().getContext('2d')
     ctx.imageSmoothingEnabled = false
