@@ -20,7 +20,7 @@ export function histogram(data: number[][]) {
     return this
   }
 
-  function histogram(xG, yG, xScale, yScale) {
+  function histogram(xCtx: CanvasRenderingContext2D, yCtx: CanvasRenderingContext2D, xScale, yScale) {
     const xLen = data.length
     const yLen = data[0].length
 
@@ -53,31 +53,33 @@ export function histogram(data: number[][]) {
     const xBinsMax = d3.max(xBins, section => section.val)!
     const yBinsMax = d3.max(yBins, section => section.val)!
 
-    let xRect = xG.selectAll('rect').data(xBins)
-    xRect.exit().remove()
-    xRect = xRect
-      .enter()
-      .append('rect')
-      .attr('stroke', stroke)
-      .attr('fill', fill)
-      .merge(xRect)
-      .attr('x', d => d.start)
-      .attr('y', d => xHeight - (xHeight * d.val) / xBinsMax)
-      .attr('width', d => d.end - d.start)
-      .attr('height', d => (xHeight * d.val) / xBinsMax)
+    xCtx.clearRect(xRange[0], 0, xRange[1], xHeight)
+    xCtx.fillStyle = fill
+    xCtx.strokeStyle = stroke
+    xCtx.lineWidth = 1
+    for (const bin of xBins) {
+      const width = bin.end - bin.start
+      const height = (xHeight * bin.val) / xBinsMax
+      xCtx.beginPath()
+      xCtx.rect(bin.start, xHeight - height, width, height)
+      xCtx.fill()
+      xCtx.stroke()
+      xCtx.closePath()
+    }
 
-    let yRect = yG.selectAll('rect').data(yBins)
-    yRect.exit().remove()
-    yRect = yRect
-      .enter()
-      .append('rect')
-      .attr('stroke', stroke)
-      .attr('fill', fill)
-      .merge(yRect)
-      .attr('x', d => yWidth - (yWidth * d.val) / yBinsMax)
-      .attr('y', d => d.start)
-      .attr('width', d => (yWidth * d.val) / yBinsMax)
-      .attr('height', d => d.end - d.start)
+    yCtx.clearRect(0, yRange[0], yWidth, yRange[1])
+    yCtx.fillStyle = fill
+    yCtx.strokeStyle = stroke
+    yCtx.lineWidth = 1
+    for (const bin of yBins) {
+      const width = (yWidth * bin.val) / yBinsMax
+      const height = bin.end - bin.start
+      yCtx.beginPath()
+      yCtx.rect(yWidth - width, bin.start, width, height)
+      yCtx.fill()
+      yCtx.stroke()
+      yCtx.closePath()
+    }
   }
 
   return histogram

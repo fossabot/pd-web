@@ -121,11 +121,35 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('width', width + 'px')
       .style('height', height + 'px')
 
-    let canvas = container.selectAll('canvas').data([null])
+    let xHistogramCanvas = container.selectAll('canvas.x-histogram').data([null])
+    xHistogramCanvas = xHistogramCanvas
+      .enter()
+      .append('canvas')
+      .classed('x-histogram', true)
+      .style('position', 'absolute')
+      .merge(xHistogramCanvas)
+      .attr('width', canvasWidth)
+      .attr('height', 30)
+      .style('margin-top', height - 60 + 'px')
+      .style('margin-left', margin.left + 'px')
 
+    let yHistogramCanvas = container.selectAll('canvas.y-histogram').data([null])
+    yHistogramCanvas = yHistogramCanvas
+      .enter()
+      .append('canvas')
+      .classed('y-histogram', true)
+      .style('position', 'absolute')
+      .merge(yHistogramCanvas)
+      .attr('width', 30)
+      .attr('height', canvasHeight)
+      .style('margin-top', margin.top + 'px')
+      .style('margin-left', width - 30 + 'px')
+
+    let canvas = container.selectAll('canvas.heatmap').data([null])
     canvas = canvas
       .enter()
       .append('canvas')
+      .classed('heatmap', true)
       .merge(canvas)
       .attr('width', canvasWidth * MSAARatio)
       .attr('height', canvasHeight * MSAARatio)
@@ -179,22 +203,6 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .classed('label-axis', true)
       .merge(labelAxisG)
       .attr('transform', 'translate(20, ' + margin.top + ')')
-
-    let xHistogramG = axis.selectAll('g.x-histogram').data([null])
-    xHistogramG = xHistogramG
-      .enter()
-      .append('g')
-      .classed('x-histogram', true)
-      .merge(xHistogramG)
-      .attr('transform', 'translate(' + margin.left + ',' + (height - 60) + ')')
-
-    let yHistogramG = axis.selectAll('g.y-histogram').data([null])
-    yHistogramG = yHistogramG
-      .enter()
-      .append('g')
-      .classed('y-histogram', true)
-      .merge(yHistogramG)
-      .attr('transform', 'translate(' + (width - 30) + ', ' + margin.top + ')')
 
     d3.zoom().transform(axis, zoomTransform)
 
@@ -320,7 +328,12 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       const rescaleX = zoomTransform.rescaleX(xScale)
       const rescaleY = zoomTransform.rescaleY(yScale)
 
-      histogramAxis(xHistogramG, yHistogramG, rescaleX, rescaleY)
+      histogramAxis(
+        xHistogramCanvas.node().getContext('2d'),
+        yHistogramCanvas.node().getContext('2d'),
+        rescaleX,
+        rescaleY
+      )
       labelAxisG.call(labelAxis.scale(rescaleY))
       xAxisG.call(xAxis.scale(rescaleX))
       hideAxisTicksWithoutLabel()
