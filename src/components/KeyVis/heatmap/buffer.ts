@@ -15,7 +15,7 @@ export function createBuffer(values: number[][], colorScale: ColorScale) {
   const sourceImageData = ctx.createImageData(valueWidth, valueHeight)
   const imageData = sourceImageData.data
 
-  for (var i = 0; i < imageData.length; i += 4) {
+  for (let i = 0; i < imageData.length; i += 4) {
     const pixel = i / 4
     const x = pixel % valueWidth
     const y = Math.floor(pixel / valueWidth)
