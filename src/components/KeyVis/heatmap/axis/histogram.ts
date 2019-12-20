@@ -1,8 +1,6 @@
 import * as d3 from 'd3'
 import { Section, scaleSections } from '.'
 
-const xHeight = 30
-const yWidth = 30
 const fill = '#333'
 const stroke = '#fff'
 
@@ -21,6 +19,9 @@ export function histogram(data: number[][]) {
   }
 
   function histogram(xCtx: CanvasRenderingContext2D, yCtx: CanvasRenderingContext2D, xScale, yScale) {
+    const xHeight = xCtx.canvas.height
+    const yWidth = yCtx.canvas.width
+
     const xLen = data.length
     const yLen = data[0].length
 

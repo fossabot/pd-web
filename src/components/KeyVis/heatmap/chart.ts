@@ -126,6 +126,18 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('margin-top', margin.top + 'px')
       .style('margin-left', width - 30 + 'px')
 
+    let labelCanvas = container.selectAll('canvas.label').data([null])
+    labelCanvas = labelCanvas
+      .enter()
+      .append('canvas')
+      .classed('label', true)
+      .style('position', 'absolute')
+      .merge(labelCanvas)
+      .attr('width', 60)
+      .attr('height', canvasHeight)
+      .style('margin-top', margin.top + 'px')
+      .style('margin-left', 20 + 'px')
+
     let canvas = container.selectAll('canvas.heatmap').data([null])
     canvas = canvas
       .enter()
@@ -196,14 +208,6 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .classed('x-axis', true)
       .merge(xAxisG)
       .attr('transform', 'translate(' + margin.left + ',' + (height - 20) + ')')
-
-    let labelAxisG = axis.selectAll('g.label-axis').data([null])
-    labelAxisG = labelAxisG
-      .enter()
-      .append('g')
-      .classed('label-axis', true)
-      .merge(labelAxisG)
-      .attr('transform', 'translate(20, ' + margin.top + ')')
 
     d3.zoom().transform(axis, zoomTransform)
 
@@ -335,7 +339,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         rescaleX,
         rescaleY
       )
-      labelAxisG.call(labelAxis.scale(rescaleY))
+      labelAxis(labelCanvas.node().getContext('2d'), rescaleY)
       xAxisG.call(xAxis.scale(rescaleX))
       hideAxisTicksWithoutLabel()
 

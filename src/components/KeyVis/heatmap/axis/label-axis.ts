@@ -9,78 +9,61 @@ const labelAxisWidth = 28
 const labelTextPadding = 4
 const minTextHeight = 17
 const fill = '#333'
+const textFill = 'white'
 const stroke = '#fff'
 
 type Label<U> = Section<string, U>
 
 export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
-  let scale = d3.scaleIdentity()
   let range: [number, number] = [0, 0]
   const groups = aggrKeyAxisLabel(keyAxis)
-
-  const labelAxisGroup = selection => {
-    let scaledGroups = groups.map(group => scaleSections(group, range, scale, () => ''))
-
-    const g = selection.selectAll('g').data(scaledGroups)
-
-    g.enter()
-      .append('g')
-      .attr('transform', (d, i) => `translate(${i * (labelAxisWidth + labelAxisMargin)}, 0)`)
-      .merge(g)
-      .call(labelAxis)
-
-    g.exit().remove()
-  }
-
-  labelAxisGroup.scale = function(val) {
-    scale = val
-    return this
-  }
 
   labelAxisGroup.range = function(val) {
     range = val
     return this
   }
 
+  function labelAxisGroup(ctx: CanvasRenderingContext2D, scale: (n: number) => number) {
+    const width = ctx.canvas.width
+    const height = ctx.canvas.height
+
+    let scaledGroups = groups.map(group => scaleSections(group, range, scale, () => ''))
+
+    ctx.clearRect(0, 0, width, height)
+    ctx.strokeStyle = stroke
+    ctx.lineWidth = 1
+    ctx.font = '500 12px Poppins'
+    ctx.textBaseline = 'middle'
+    for (const [groupIdx, group] of scaledGroups.entries()) {
+      const marginLeft = groupIdx * (labelAxisWidth + labelAxisMargin)
+
+      for (const label of group) {
+        const width = labelAxisWidth
+        const height = label.end - label.start
+
+        ctx.fillStyle = fill
+        ctx.beginPath()
+        ctx.rect(marginLeft, label.start, width, height)
+        ctx.fill()
+        ctx.stroke()
+        ctx.closePath()
+
+        if (shouleShowLabelText(label)) {
+          ctx.fillStyle = textFill
+          ctx.translate(marginLeft + labelAxisWidth / 2 + 2, label.end - labelTextPadding)
+          ctx.rotate(-Math.PI / 2)
+          ctx.fillText(fitLabelText(label), 0, 0)
+          ctx.setTransform(1, 0, 0, 1, 0, 0)
+        }
+      }
+    }
+  }
+
   return labelAxisGroup
 }
 
-function labelAxis(selection) {
-  const rects = selection.selectAll('rect').data(d => {
-    return d
-  })
-  const texts = selection.selectAll('text').data(d => d)
-
-  rects
-    .enter()
-    .append('rect')
-    .attr('width', labelAxisWidth)
-    .attr('x', 0)
-    .attr('stroke', stroke)
-    .merge(rects)
-    .attr('fill', fill)
-    .attr('y', label => label.start)
-    .attr('height', label => label.end - label.start)
-
-  rects.exit().remove()
-
-  texts
-    .enter()
-    .append('text')
-    .attr('fill', 'white')
-    .attr('writing-mode', 'tb')
-    .attr('font-size', '12')
-    .attr('font-weight', '500')
-    .merge(texts)
-    .attr('transform', label => `translate(${labelAxisWidth / 2}, ${label.end - labelTextPadding}) rotate(180)`)
-    .text(label => fitLabelText(label))
-    .style('display', label => (shouleHideLabel(label) ? 'none' : ''))
-
-  texts.exit().remove()
-}
-
-function shouleHideLabel(label: Label<number>): boolean {
-  return label.end - label.start < minTextHeight || label.val?.length === 0
+function shouleShowLabelText(label: Label<number>): boolean {
+  return label.end - label.start >= minTextHeight && label.val?.length !== 0
 }
 
 function fitLabelText(label: Label<number>): string {
