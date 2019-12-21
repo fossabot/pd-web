@@ -2,6 +2,7 @@ import * as d3 from 'd3'
 import { Section, scaleSections } from '.'
 
 const fill = '#333'
+const fillFocus = '#ccc'
 const stroke = '#fff'
 
 export function histogram(data: number[][]) {
@@ -18,7 +19,14 @@ export function histogram(data: number[][]) {
     return this
   }
 
-  function histogram(xCtx: CanvasRenderingContext2D, yCtx: CanvasRenderingContext2D, xScale, yScale) {
+  function histogram(
+    xCtx: CanvasRenderingContext2D,
+    yCtx: CanvasRenderingContext2D,
+    xFocusDomain: [number, number] | null,
+    yFocusDomain: [number, number] | null,
+    xScale,
+    yScale
+  ) {
     const xHeight = xCtx.canvas.height
     const yWidth = yCtx.canvas.width
 
@@ -48,19 +56,19 @@ export function histogram(data: number[][]) {
       ySum.push({ val: sumVal, startIdx: y, endIdx: y + 1 })
     }
 
-    const xBins = scaleSections(xSum, xRange, xScale, (origin, val) => origin + val)
-    const yBins = scaleSections(ySum, yRange, yScale, (origin, val) => origin + val)
+    const xBins = scaleSections(xSum, xFocusDomain, xRange, xScale, (origin, val) => origin + val)
+    const yBins = scaleSections(ySum, yFocusDomain, yRange, yScale, (origin, val) => origin + val)
 
     const xBinsMax = d3.max(xBins, section => section.val)!
     const yBinsMax = d3.max(yBins, section => section.val)!
 
     xCtx.clearRect(xRange[0], 0, xRange[1], xHeight)
-    xCtx.fillStyle = fill
     xCtx.strokeStyle = stroke
     xCtx.lineWidth = 1
     for (const bin of xBins) {
       const width = bin.endPos - bin.startPos
       const height = (xHeight * bin.val) / xBinsMax
+      xCtx.fillStyle = bin.focus ? fillFocus : fill
       xCtx.beginPath()
       xCtx.rect(bin.startPos, xHeight - height, width, height)
       xCtx.fill()
@@ -69,12 +77,12 @@ export function histogram(data: number[][]) {
     }
 
     yCtx.clearRect(0, yRange[0], yWidth, yRange[1])
-    yCtx.fillStyle = fill
     yCtx.strokeStyle = stroke
     yCtx.lineWidth = 1
     for (const bin of yBins) {
       const width = (yWidth * bin.val) / yBinsMax
       const height = bin.endPos - bin.startPos
+      yCtx.fillStyle = bin.focus ? fillFocus : fill
       yCtx.beginPath()
       yCtx.rect(yWidth - width, bin.startPos, width, height)
       yCtx.fill()

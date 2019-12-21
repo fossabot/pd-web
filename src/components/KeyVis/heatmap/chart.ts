@@ -31,6 +31,11 @@ type TooltipStatus = {
   y: number
 }
 
+type FocusStatus = {
+  xDomain: [number, number]
+  yDomain: [number, number]
+}
+
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
 
 export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
@@ -40,6 +45,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
   let tooltipStatus: TooltipStatus = defaultTooltipStatus
+  let focusStatus: FocusStatus | null = null
   let isBrushing = false
   let width = 0
   let height = 0
@@ -269,9 +275,18 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       render()
     }
 
+    function focusPoint(x: number, y: number) {
+      focusStatus = { xDomain: [x, x + 0.001], yDomain: [y, y + 0.001] }
+    }
+
     function hoverBehavior(axis) {
       axis.on('mousemove', () => {
         showTooltips()
+        render()
+      })
+
+      axis.on('mouseout', () => {
+        if (!tooltipStatus.pinned) focusStatus = null
         render()
       })
     }
@@ -283,6 +298,13 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         const mouseCanvasOffset = d3.mouse(canvas.node())
         if (isNaN(mouseCanvasOffset[0])) return
 
+        const rescaleX = zoomTransform.rescaleX(xScale)
+        const rescaleY = zoomTransform.rescaleY(yScale)
+        const x = rescaleX.invert(mouseCanvasOffset[0])
+        const y = rescaleY.invert(mouseCanvasOffset[1])
+
+        focusPoint(x, y)
+
         if (
           mouseCanvasOffset[0] < 0 ||
           mouseCanvasOffset[0] > canvasWidth ||
@@ -290,13 +312,10 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
           mouseCanvasOffset[1] > canvasHeight
         ) {
           hideTooltips()
-          return
+        } else {
+          tooltipStatus.x = x
+          tooltipStatus.y = y
         }
-
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        tooltipStatus.x = rescaleX.invert(mouseCanvasOffset[0])
-        tooltipStatus.y = rescaleY.invert(mouseCanvasOffset[1])
       }
     }
 
@@ -342,10 +361,12 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       histogramAxis(
         xHistogramCanvas.node().getContext('2d'),
         yHistogramCanvas.node().getContext('2d'),
+        focusStatus?.xDomain,
+        focusStatus?.yDomain,
         rescaleX,
         rescaleY
       )
-      labelAxis(labelCanvas.node().getContext('2d'), rescaleY)
+      labelAxis(labelCanvas.node().getContext('2d'), focusStatus?.yDomain, rescaleY)
       xAxisG.call(xAxis.scale(rescaleX))
       hideAxisTicksWithoutLabel()
 

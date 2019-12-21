@@ -9,8 +9,12 @@ const labelAxisWidth = 28
 const labelTextPadding = 4
 const minTextHeight = 17
 const fill = '#333'
-const textFill = 'white'
+const fillFocus = '#ccc'
 const stroke = '#fff'
+const textFill = 'white'
+const textFillFocus = '#333'
+const font = '500 12px Poppins'
+const focusFont = '700 12px Poppins'
 
 type Label = Section<string>
 type DisplayLabel = DisplaySection<string>
@@ -24,16 +28,19 @@ export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
     return this
   }
 
-  function labelAxisGroup(ctx: CanvasRenderingContext2D, scale: (n: number) => number) {
+  function labelAxisGroup(
+    ctx: CanvasRenderingContext2D,
+    focusDomain: [number, number] | null,
+    scale: (idx: number) => number
+  ) {
     const width = ctx.canvas.width
     const height = ctx.canvas.height
 
-    let scaledGroups = groups.map(group => scaleSections(group, range, scale, () => ''))
+    let scaledGroups = groups.map(group => scaleSections(group, focusDomain, range, scale, () => ''))
 
     ctx.clearRect(0, 0, width, height)
     ctx.strokeStyle = stroke
     ctx.lineWidth = 1
-    ctx.font = '500 12px Poppins'
     ctx.textBaseline = 'middle'
     for (const [groupIdx, group] of scaledGroups.entries()) {
       const marginLeft = groupIdx * (labelAxisWidth + labelAxisMargin)
@@ -42,7 +49,7 @@ export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
         const width = labelAxisWidth
         const height = label.endPos - label.startPos
 
-        ctx.fillStyle = fill
+        ctx.fillStyle = label.focus ? fillFocus : fill
         ctx.beginPath()
         ctx.rect(marginLeft, label.startPos, width, height)
         ctx.fill()
@@ -50,7 +57,8 @@ export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
         ctx.closePath()
 
         if (shouleShowLabelText(label)) {
-          ctx.fillStyle = textFill
+          ctx.font = label.focus ? focusFont : font
+          ctx.fillStyle = label.focus ? textFillFocus : textFill
           ctx.translate(marginLeft + labelAxisWidth / 2 + 2, label.endPos - labelTextPadding)
           ctx.rotate(-Math.PI / 2)
           ctx.fillText(fitLabelText(label), 0, 0)
