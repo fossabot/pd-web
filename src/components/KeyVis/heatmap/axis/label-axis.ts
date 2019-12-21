@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { Section, scaleSections } from '.'
+import { Section, DisplaySection, scaleSections } from '.'
 import { KeyAxisEntry } from '..'
 import { truncateString } from '../utils'
 import _ from 'lodash'
@@ -12,7 +12,8 @@ const fill = '#333'
 const textFill = 'white'
 const stroke = '#fff'
 
-type Label<U> = Section<string, U>
+type Label = Section<string>
+type DisplayLabel = DisplaySection<string>
 
 export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
   let range: [number, number] = [0, 0]
@@ -39,18 +40,18 @@ export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
 
       for (const label of group) {
         const width = labelAxisWidth
-        const height = label.end - label.start
+        const height = label.endPos - label.startPos
 
         ctx.fillStyle = fill
         ctx.beginPath()
-        ctx.rect(marginLeft, label.start, width, height)
+        ctx.rect(marginLeft, label.startPos, width, height)
         ctx.fill()
         ctx.stroke()
         ctx.closePath()
 
         if (shouleShowLabelText(label)) {
           ctx.fillStyle = textFill
-          ctx.translate(marginLeft + labelAxisWidth / 2 + 2, label.end - labelTextPadding)
+          ctx.translate(marginLeft + labelAxisWidth / 2 + 2, label.endPos - labelTextPadding)
           ctx.rotate(-Math.PI / 2)
           ctx.fillText(fitLabelText(label), 0, 0)
           ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -62,18 +63,18 @@ export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
   return labelAxisGroup
 }
 
-function shouleShowLabelText(label: Label<number>): boolean {
-  return label.end - label.start >= minTextHeight && label.val?.length !== 0
+function shouleShowLabelText(label: DisplayLabel): boolean {
+  return label.endPos - label.startPos >= minTextHeight && label.val?.length !== 0
 }
 
-function fitLabelText(label: Label<number>): string {
-  const rectWidth = label.end - label.start
+function fitLabelText(label: DisplayLabel): string {
+  const rectWidth = label.endPos - label.startPos
   const textLen = Math.floor(rectWidth / 7.5)
   return truncateString(label.val, textLen)
 }
 
-function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label<number>[][] {
-  let result: Label<number>[][] = _.times(4, () => [])
+function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label[][] {
+  let result: Label[][] = _.times(4, () => [])
 
   for (let groupIdx = 0; groupIdx < result.length; groupIdx++) {
     let lastLabel: string | null = null
@@ -86,9 +87,8 @@ function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label<number>[][] {
         if (startKeyIdx != null && lastLabel != null) {
           result[groupIdx].push({
             val: lastLabel,
-            start: startKeyIdx,
-            end: keyIdx,
-            idx: startKeyIdx
+            startIdx: startKeyIdx,
+            endIdx: keyIdx
           })
           startKeyIdx = null
         }

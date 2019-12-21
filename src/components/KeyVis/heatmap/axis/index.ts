@@ -1,35 +1,44 @@
-export type Section<T, U> = {
+import _ from 'lodash'
+
+export type Section<T> = {
   val: T
-  start: U
-  end: U
-  idx: number
+  startIdx: number
+  endIdx: number
+}
+
+export type DisplaySection<T> = {
+  val: T
+  startIdx: number
+  endIdx: number
+  startPos: number
+  endPos: number
 }
 
 const mergeWidth = 3
 
-export function scaleSections<T, U>(
-  sections: Section<T, U>[],
+export function scaleSections<T>(
+  sections: Section<T>[],
   range: [number, number],
-  scale: (t: U) => number,
+  scale: (idx: number) => number,
   merge: (origin: T, val: T) => T
-): Section<T, number>[] {
-  let result: Section<T, number>[] = []
-  let mergedSmallSection: Section<T, number> | null = null
+): DisplaySection<T>[] {
+  let result: DisplaySection<T>[] = []
+  let mergedSmallSection: DisplaySection<T> | null = null
   let oneSectionRendered = false
 
   for (const section of sections) {
     const canvasStart = range[0]
     const canvasEnd = range[1]
-    const startPos = scale(section.start)
-    const endPos = scale(section.end)
+    const startPos = scale(section.startIdx)
+    const endPos = scale(section.endIdx)
     const commonStart = Math.max(startPos, canvasStart)
     const commonEnd = Math.min(endPos, canvasEnd)
 
     if (mergedSmallSection) {
       if (
-        mergedSmallSection.end - mergedSmallSection.start >= mergeWidth ||
-        commonStart - mergedSmallSection.end > mergeWidth ||
-        (!oneSectionRendered && section.idx % 2 === 0)
+        mergedSmallSection.endPos - mergedSmallSection.startPos >= mergeWidth ||
+        commonStart - mergedSmallSection.startPos > mergeWidth ||
+        (!oneSectionRendered && section.startIdx % 2 === 0)
       ) {
         result.push(mergedSmallSection)
         oneSectionRendered = true
@@ -39,15 +48,15 @@ export function scaleSections<T, U>(
 
     if (commonEnd - commonStart > 0) {
       if (commonEnd - commonStart > mergeWidth) {
-        result.push({ val: section.val, start: commonStart, end: commonEnd, idx: section.idx })
+        result.push(_.assign({ startPos: commonStart, endPos: commonEnd }, section))
         oneSectionRendered = true
         mergedSmallSection = null
       } else {
         if (mergedSmallSection === null) {
-          mergedSmallSection = { val: section.val, start: commonStart, end: commonEnd, idx: section.idx }
+          mergedSmallSection = _.assign({ startPos: commonStart, endPos: commonEnd }, section)
         } else {
           mergedSmallSection.val = merge(mergedSmallSection.val, section.val)
-          mergedSmallSection.end = commonEnd
+          mergedSmallSection.endPos = commonEnd
         }
       }
     }
