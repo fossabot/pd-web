@@ -40,6 +40,7 @@ const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
 
 export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
   let data: HeatmapData
+  let maxValue = 0
   let brightness = 1
   let colorTheme: ColorTheme
   let bufferCanvas: HTMLCanvasElement
@@ -55,7 +56,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   const MSAARatio = 4
 
   function updateBuffer() {
-    const maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
+    maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
     colorTheme = getColorTheme(maxValue, brightness)
     bufferCanvas = createBuffer(data.data[dataTag], colorTheme.backgroud)
   }
@@ -298,10 +299,10 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         const mouseCanvasOffset = d3.mouse(canvas.node())
         if (isNaN(mouseCanvasOffset[0])) return
 
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        const x = rescaleX.invert(mouseCanvasOffset[0])
-        const y = rescaleY.invert(mouseCanvasOffset[1])
+        const xRescale = zoomTransform.rescaleX(xScale)
+        const yRescale = zoomTransform.rescaleY(yScale)
+        const x = xRescale.invert(mouseCanvasOffset[0])
+        const y = yRescale.invert(mouseCanvasOffset[1])
 
         focusPoint(x, y)
 
@@ -355,21 +356,15 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
     axis.call(hoverBehavior)
 
     function render() {
-      const rescaleX = zoomTransform.rescaleX(xScale)
-      const rescaleY = zoomTransform.rescaleY(yScale)
+      renderHeatmap()
+      renderHighlight()
+      rednerAxis()
+      renderBrush()
+      renderTooltip()
+      renderCross()
+    }
 
-      histogramAxis(
-        xHistogramCanvas.node().getContext('2d'),
-        yHistogramCanvas.node().getContext('2d'),
-        focusStatus?.xDomain,
-        focusStatus?.yDomain,
-        rescaleX,
-        rescaleY
-      )
-      labelAxis(labelCanvas.node().getContext('2d'), focusStatus?.yDomain, rescaleY)
-      xAxisG.call(xAxis.scale(rescaleX))
-      hideAxisTicksWithoutLabel()
-
+    function renderHeatmap() {
       ctx.clearRect(0, 0, canvasWidth * MSAARatio, canvasHeight * MSAARatio)
       ctx.drawImage(
         bufferCanvas,
@@ -382,10 +377,62 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         canvasWidth * MSAARatio,
         canvasHeight * MSAARatio
       )
+    }
 
-      renderBrush()
-      renderTooltip()
-      renderCross()
+    function renderHighlight() {
+      const selectedData = data.data[dataTag]
+      const xLen = selectedData.length
+      const yLen = selectedData[0].length
+      const xRescale = zoomTransform.rescaleX(xScale)
+      const yRescale = zoomTransform.rescaleY(yScale)
+      const xStartIdx = Math.max(0, Math.floor(xScale.invert(0)))
+      const xEndIdx = Math.min(xLen - 1, Math.ceil(xScale.invert(canvasWidth)))
+      const yStartIdx = Math.max(0, Math.floor(yScale.invert(0)))
+      const yEndIdx = Math.min(yLen - 1, Math.ceil(yScale.invert(canvasHeight)))
+
+      ctx.shadowColor = '#ffff'
+      ctx.shadowBlur = (15 + 2 * (zoomTransform.k - 1)) * MSAARatio
+      ctx.fillStyle = 'blue'
+      for (let x = xStartIdx; x < xEndIdx; x++) {
+        for (let y = yStartIdx; y < yEndIdx; y++) {
+          if (selectedData[x][y] > maxValue / 3) {
+            const left = xRescale(x)
+            const top = yRescale(y)
+            const right = xRescale(x + 1)
+            const bottom = yRescale(y + 1)
+            const width = right - left
+            const height = bottom - top
+            const xPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * width) / height
+            const yPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * height) / width
+            ctx.beginPath()
+            ctx.shadowOffsetX = (left + 1000) * MSAARatio
+            ctx.shadowOffsetY = (top + 1000) * MSAARatio
+            ctx.fillRect(
+              (-1000 - xPadding) * MSAARatio,
+              (-1000 - yPadding) * MSAARatio,
+              (right - left + xPadding * 2) * MSAARatio,
+              (bottom - top + yPadding * 2) * MSAARatio
+            )
+            ctx.closePath()
+          }
+        }
+      }
+    }
+
+    function rednerAxis() {
+      const xRescale = zoomTransform.rescaleX(xScale)
+      const yRescale = zoomTransform.rescaleY(yScale)
+      histogramAxis(
+        xHistogramCanvas.node().getContext('2d'),
+        yHistogramCanvas.node().getContext('2d'),
+        focusStatus?.xDomain,
+        focusStatus?.yDomain,
+        xRescale,
+        yRescale
+      )
+      labelAxis(labelCanvas.node().getContext('2d'), focusStatus?.yDomain, yRescale)
+      xAxisG.call(xAxis.scale(xRescale))
+      hideAxisTicksWithoutLabel()
     }
 
     function renderBrush() {
@@ -447,9 +494,9 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       if (tooltipStatus.hidden) {
         tooltipLayer.selectAll('div').remove()
       } else {
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        const canvasOffset = [rescaleX(tooltipStatus.x), rescaleY(tooltipStatus.y)]
+        const xRescale = zoomTransform.rescaleX(xScale)
+        const yRescale = zoomTransform.rescaleY(yScale)
+        const canvasOffset = [xRescale(tooltipStatus.x), yRescale(tooltipStatus.y)]
         const clampX = x => _.clamp(x, 0, canvasWidth - tooltipSize.width)
         const clampY = y => _.clamp(y, 0, canvasHeight - tooltipSize.height)
         const rightX = margin.left + clampX(canvasOffset[0] + tooltipOffset.horizontal)
@@ -550,9 +597,9 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
 
     function renderCross() {
       if (tooltipStatus.pinned) {
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        const canvasOffset = [rescaleX(tooltipStatus.x) * MSAARatio, rescaleY(tooltipStatus.y) * MSAARatio]
+        const xRescale = zoomTransform.rescaleX(xScale)
+        const yRescale = zoomTransform.rescaleY(yScale)
+        const canvasOffset = [xRescale(tooltipStatus.x) * MSAARatio, yRescale(tooltipStatus.y) * MSAARatio]
         const crossCenterPadding = 3 * MSAARatio
         const crossBorder = 1 * MSAARatio
         const crossSize = 8 * MSAARatio
