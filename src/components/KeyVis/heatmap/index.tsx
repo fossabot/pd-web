@@ -46,19 +46,25 @@ export function tagUnit(tag: DataTag): string {
 type HeatmapProps = {
   data: HeatmapData
   onBrush: (selection: HeatmapRange) => void
+  onZoom: () => void
+  onChartInit: (any) => void
 }
 
-export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
+const _Heatmap: React.FunctionComponent<HeatmapProps> = props => {
   const divRef: React.RefObject<HTMLDivElement> = useRef(null)
-  let chart
+
+  let chart, data
 
   useEffect(() => {
+    console.log('side effect in heatmap')
     if (divRef.current != null) {
+      console.log('side effect in heatmap inside')
       const container = divRef.current
-      chart = heatmapChart(d3.select(container), props.onBrush, () => {
-        /*onZoom*/
-      })
+      chart = heatmapChart(d3.select(container), props.onBrush, props.onZoom)
+      if (data == props.data) return
+      data = props.data
       chart.data(props.data)
+      props.onChartInit(chart)
       const render = () => {
         const width = container.offsetWidth
         const height = container.offsetHeight
@@ -67,20 +73,9 @@ export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
       window.onresize = render
       render()
     }
-  }, [props])
+  }, [props.data])
 
-  const onZoomClick = useCallback(() => {
-    if (divRef.current != null) {
-      chart.brush(true)
-    }
-  }, [props])
-
-  return (
-    <>
-      {/* <button style={{ margin: 20, display: 'block' }} onClick={onZoomClick}>
-        Zoom
-      </button> */}
-      <div className="heatmap" ref={divRef} />
-    </>
-  )
+  return <div className="heatmap" ref={divRef} />
 }
+
+export const Heatmap = React.memo(_Heatmap)
