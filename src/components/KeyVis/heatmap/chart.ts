@@ -376,7 +376,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
 
     function render() {
       renderHeatmap()
-      renderHighlight()
+      // renderHighlight()
       rednerAxis()
       renderBrush()
       renderTooltip()
@@ -414,7 +414,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       ctx.fillStyle = 'blue'
       for (let x = xStartIdx; x < xEndIdx; x++) {
         for (let y = yStartIdx; y < yEndIdx; y++) {
-          if (selectedData[x][y] > maxValue / 3) {
+          if (selectedData[x][y] > maxValue / 2) {
             const left = xRescale(x)
             const top = yRescale(y)
             const right = xRescale(x + 1)
