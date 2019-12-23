@@ -4,47 +4,67 @@ import { fetchDummyHeatmap, fetchHeatmap } from 'api/keyvis'
 
 import ToolBar from './ToolBar'
 
-const DEFAULT_INTERVAL = 15000
-const USE_LOCAL_DATA = true
+const DEFAULT_INTERVAL = 60000
 
 // Todo: define heatmap state, with auto check control, date range select, reset to zoom
-export interface IKeyVisState {
-  heatmapData: HeatmapData
-}
-
 // fetchData ,  changeType, add loading state, change zoom level to reset autofetch,
 
+let _chart
+
 const KeyVis = () => {
-  let timerId,
-    _chart,
-    brightLevel = 1
+  let brightLevel = 1
 
   const [heatmapData, setHeatmapData] = useState<HeatmapData>()
 
-  const [isLoading, setLoading] = useState(true)
-  const [isAutoFetch, setAutoFetch] = useState(true)
+  const [isLoading, setLoading] = useState(false)
+  const [isAutoFetch, setAutoFetch] = useState(false)
+  const [isOnBrush, setOnBrush] = useState(false)
+  const [dateRange, setDateRange] = useState(3600 * 12)
+  const [metricType, setMetricType] = useState('written_bytes')
+
+  console.log('Keyvis Init')
 
   useEffect(() => {
     const load = async () => {
       if (!heatmapData) setHeatmapData(await fetchDummyHeatmap())
     }
     load()
+  }, [])
+
+  useEffect(() => {
+    console.log('side effect in keyvis')
+
+    const timerId =
+      isAutoFetch &&
+      setInterval(() => {
+        _fetchHeatmap()
+      }, DEFAULT_INTERVAL)
+
     return () => {
-      console.log('will unmount')
-      _chart = null
-      clearInterval(timerId)
+      console.log('side effect in keyvis cleanup')
+      // _chart = null
+      timerId && clearInterval(timerId)
     }
-  }, [heatmapData])
+  }, [isAutoFetch])
 
   const _fetchHeatmap = async (selection?: HeatmapRange) => {
     // loading effect
-    // setLoading(true)
-    setHeatmapData(await fetchHeatmap(selection))
-    // setLoading(false)
+    setLoading(true)
+    if (!selection) {
+      const endTime = Math.ceil(new Date().getTime() / 1000)
+      selection = {
+        startTime: endTime - dateRange,
+        endTime
+      }
+    }
+    const data = await fetchHeatmap(selection, metricType)
+
+    setHeatmapData(data)
+
+    setLoading(false)
   }
 
   const onAdjustBright = (type: 'up' | 'down' | 'reset') => {
-    // adjustBright-invoke instance.method
     if (!_chart) return
     let newBrightLevel
     switch (type) {
@@ -60,22 +80,21 @@ const KeyVis = () => {
     }
     if (newBrightLevel > 5 || newBrightLevel < 0.1) newBrightLevel = 1
     _chart.brightness(newBrightLevel)
-    // TODO: trigger React
   }
 
-  const onToggleAutoFetch = (enable: Boolean) => {
-    if (enable) {
-      timerId = setInterval(() => {
-        _fetchHeatmap()
-      }, DEFAULT_INTERVAL)
-      _fetchHeatmap()
-    } else {
-      clearInterval(timerId)
+  const onToggleAutoFetch = (enable: Boolean | undefined) => {
+    if (enable == undefined) {
+      enable = !isAutoFetch
     }
+    setAutoFetch(enable as boolean)
+    if (enable) _fetchHeatmap()
   }
 
-  const onChangeMetric = value => {
-    console.log(value)
+  const onChangeMetric = async value => {
+    setMetricType(value)
+    _chart.dataTag(value)
+    await _fetchHeatmap()
+    _chart.dataTag(value)
   }
 
   const onChartInit = chart => {
@@ -83,31 +102,46 @@ const KeyVis = () => {
   }
 
   const onChangeDateRange = (v: number) => {
-    const endTime = new Date().getTime()
-    const selection: HeatmapRange = {
-      startTime: endTime - v,
-      endTime
-    }
-    _fetchHeatmap(selection)
+    setDateRange(v)
+    _fetchHeatmap()
+  }
+
+  const onResetZoom = () => {
+    _chart.resetZoom()
+    _fetchHeatmap()
+  }
+
+  const onToggleBrush = () => {
+    setAutoFetch(false)
+    setOnBrush(!isOnBrush)
+    _chart.brush(!isOnBrush)
   }
 
   const onBrush = (selection: HeatmapRange) => {
-    onToggleAutoFetch(false)
-    // TODO: change toolbar enable status
+    setAutoFetch(false)
     _fetchHeatmap(selection)
+  }
+
+  const onZoom = () => {
+    setAutoFetch(false)
   }
 
   return (
     <div className="PD-KeyVis">
       <ToolBar
+        dateRange={dateRange}
+        metricType={metricType}
+        onToggleBrush={onToggleBrush}
+        onResetZoom={onResetZoom}
         isLoading={isLoading}
         isAutoFetch={isAutoFetch}
+        isOnBrush={isOnBrush}
         onAdjustBright={onAdjustBright}
         onChangeMetric={onChangeMetric}
         onChangeDateRange={onChangeDateRange}
         onToggleAutoFetch={onToggleAutoFetch}
       />
-      {heatmapData ? <Heatmap data={heatmapData} onBrush={onBrush} onChartInit={onChartInit} /> : <></>}
+      {heatmapData ? <Heatmap data={heatmapData} onBrush={onBrush} onChartInit={onChartInit} onZoom={onZoom} /> : <></>}
     </div>
   )
 }

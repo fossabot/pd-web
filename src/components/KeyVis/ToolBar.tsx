@@ -4,26 +4,20 @@ import React, { Component } from 'react'
 export interface IKeyVisToolBarProps {
   isLoading: boolean
   isAutoFetch: boolean
+  isOnBrush: boolean
+  metricType: string
+  dateRange: number
+  onResetZoom: () => void
+  onToggleBrush: () => void
   onChangeMetric: (string) => void
-  onToggleAutoFetch: (boolean) => void
+  onToggleAutoFetch: any
   onChangeDateRange: (number) => void
   onAdjustBright: (string) => void
 }
 
 export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
-  state = {
-    activeItem: 'auto_update',
-    metricType: 'write_bytes',
-    isAutoFetch: true,
-    dateRange: 1000 * 3600 * 12
-  }
-
-  handleZoom = () => {}
-
   handleAutoFetch = (_, { name }: MenuItemProps) => {
-    const isAutoFetch = !this.state.isAutoFetch
-    this.setState({ isAutoFetch })
-    this.props.onToggleAutoFetch(isAutoFetch)
+    this.props.onToggleAutoFetch()
   }
 
   handleDateRange = (e, { value }: DropdownProps) => {
@@ -37,40 +31,45 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
   }
 
   render() {
-    const { isAutoFetch } = this.state
+    const { isAutoFetch, dateRange, isOnBrush, metricType } = this.props
     const DateRagneOptions = [
       {
         key: 0,
         text: '1 Hour',
-        value: 1000 * 3600 * 1
+        value: 3600 * 1
       },
       {
         key: 1,
         text: '12 Hours',
-        value: 1000 * 3600 * 12
+        value: 3600 * 12
       },
-      { key: 2, text: '1 Day', value: 1000 * 3600 * 24 },
-      { key: 3, text: '7 Days', value: 1000 * 3600 * 24 * 7 }
+      { key: 2, text: '1 Day', value: 3600 * 24 },
+      { key: 3, text: '7 Days', value: 3600 * 24 * 7 }
     ]
 
     const MetricOptions = [
       {
         text: 'Write Bytes',
-        value: 'write_bytes'
+        value: 'written_bytes'
       },
       { text: 'Read Bytes', value: 'read_bytes' },
-      { text: 'All Bytes', value: 'aa' }
+      { text: 'Read Keys', value: 'read_keys' },
+      { text: 'Write Keys', value: 'written_keys' },
+      { text: 'All', value: 'integration' }
     ]
 
     // isAutoFetch = this.props.isAutoFetch
 
     return (
       <>
-        <Loader active={this.props.isLoading} inline />
-        <Menu icon="labeled" size="small" compact text fluid>
+        <Menu icon="labeled" size="small" compact text fluid className="PD-KeyVis-Toolbar">
           <Menu.Menu position="right">
+            <Menu.Item name="loading">
+              <Loader active={this.props.isLoading} inline />
+            </Menu.Item>
+
             <Menu.Item>
-              <Button.Group basic>
+              <Button.Group basic className="group-icons-btn">
                 <Button
                   icon="minus"
                   onClick={() => {
@@ -90,11 +89,17 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
                   }}
                 />
               </Button.Group>
+              Set Brightness
             </Menu.Item>
 
-            <Menu.Item name="resetZoom" onClick={this.handleZoom}>
+            <Menu.Item name="resetZoom" onClick={this.props.onResetZoom}>
               <Icon name="zoom-out" />
               Reset Zoom
+            </Menu.Item>
+
+            <Menu.Item name="toogleBrush" color="green" onClick={this.props.onToggleBrush} active={isOnBrush}>
+              <Icon name="zoom-in" />
+              Zoom In
             </Menu.Item>
 
             <Menu.Item name="autoUpdate" color="green" active={isAutoFetch} onClick={this.handleAutoFetch}>
@@ -104,13 +109,12 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
 
             <Menu.Item>
               <Icon name="clock outline" />
-              {/* Date Range */}
-              {/* <DateRange /> */}
+
               <Dropdown
                 placeholder="Quick range"
                 onChange={this.handleDateRange}
                 options={DateRagneOptions}
-                value={this.state.dateRange}
+                value={dateRange}
               ></Dropdown>
             </Menu.Item>
 
@@ -120,7 +124,7 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
                 placeholder="Metric"
                 onChange={this.handleMetricChange}
                 options={MetricOptions}
-                value={this.state.metricType}
+                value={metricType}
               ></Dropdown>
             </Menu.Item>
           </Menu.Menu>

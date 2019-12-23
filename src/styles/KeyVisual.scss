@@ -4,6 +4,22 @@
   width: 100%;
   height: calc(100vh - 170px);
 
+  .ui.dropdown .menu {
+    z-index: 9999;
+  }
+
+  .PD-KeyVis-Toolbar {
+
+    .group-icons-btn {
+      border: 0;
+      margin-top: -7px;
+      .button {
+        border-left: 0!important;
+      }
+    }
+  }
+
+
   .tooltip {
     padding: 10px;
     color: #eee;
