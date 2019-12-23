@@ -1,15 +1,8 @@
 import { HeatmapData, HeatmapRange } from 'components/KeyVis/heatmap'
 
-const dummyData: HeatmapData = require('fixtures/dummydata.json')
-dummyData.timeAxis = dummyData.timeAxis.map(timestamp => timestamp * 1000)
-
 export const APIURL = `${process.env.NODE_ENV === 'development' ? 'http://172.16.4.4:2888' : ''}/pd/apis/keyvisual/v1`
 
-export async function fetchDummyHeatmap() {
-  return dummyData
-}
-
-export async function fetchHeatmap(selection?: HeatmapRange, type = 'write_bytes') {
+export async function fetchHeatmap(selection?: HeatmapRange, type = 'written_bytes') {
   let url = `${APIURL}/heatmaps?type=${type}`
 
   if (selection) {

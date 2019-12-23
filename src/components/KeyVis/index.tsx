@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Heatmap, HeatmapData, HeatmapRange } from './heatmap'
-import { fetchDummyHeatmap, fetchHeatmap } from 'api/keyvis'
+import { fetchHeatmap } from 'api/keyvis'
 
 import ToolBar from './ToolBar'
 
@@ -26,7 +26,7 @@ const KeyVis = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!heatmapData) setHeatmapData(await fetchDummyHeatmap())
+      if (!heatmapData) setHeatmapData(await fetchHeatmap({}, metricType))
     }
     load()
   }, [])
