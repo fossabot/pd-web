@@ -62,7 +62,8 @@ export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
           ctx.translate(marginLeft + labelAxisWidth / 2 + 2, label.endPos - labelTextPadding)
           ctx.rotate(-Math.PI / 2)
           ctx.fillText(fitLabelText(label), 0, 0)
-          ctx.setTransform(1, 0, 0, 1, 0, 0)
+          ctx.resetTransform()
+          ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
         }
       }
     }
