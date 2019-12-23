@@ -40,6 +40,7 @@ const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
 const heatmapCanvasPixelRatio = window.devicePixelRatio * 1.5
 
 export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
+  console.log('heatmap chart init')
   let data: HeatmapData
   let maxValue = 0
   let brightness = 1
