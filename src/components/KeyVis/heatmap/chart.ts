@@ -37,6 +37,7 @@ type FocusStatus = {
 }
 
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
+const heatmapCanvasPixelRatio = window.devicePixelRatio * 1.5
 
 export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
   let data: HeatmapData
@@ -173,8 +174,8 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('position', 'absolute')
       .style('z-index', '103')
       .merge(canvas)
-      .attr('width', canvasWidth * window.devicePixelRatio * 1.5)
-      .attr('height', canvasHeight * window.devicePixelRatio * 1.5)
+      .attr('width', canvasWidth * heatmapCanvasPixelRatio)
+      .attr('height', canvasHeight * heatmapCanvasPixelRatio)
       .style('width', canvasWidth + 'px')
       .style('height', canvasHeight + 'px')
       .style('margin-top', margin.top + 'px')
@@ -183,7 +184,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('margin-left', margin.left + 'px')
     const ctx: CanvasRenderingContext2D = canvas.node().getContext('2d')
     ctx.imageSmoothingEnabled = false
-    ctx.scale(window.devicePixelRatio * 1.5, window.devicePixelRatio * 1.5)
+    ctx.scale(heatmapCanvasPixelRatio, heatmapCanvasPixelRatio)
 
     let axis = container.selectAll('svg').data([null])
     axis = axis
@@ -374,7 +375,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
 
     function render() {
       renderHeatmap()
-      // renderHighlight()
+      renderHighlight()
       rednerAxis()
       renderBrush()
       renderTooltip()
@@ -408,7 +409,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       const yEndIdx = Math.min(yLen - 1, Math.ceil(yScale.invert(canvasHeight)))
 
       ctx.shadowColor = '#fff'
-      ctx.shadowBlur = 15 + 2 * (zoomTransform.k - 1)
+      ctx.shadowBlur = 10 + 1 * (zoomTransform.k - 1)
       ctx.fillStyle = 'blue'
       for (let x = xStartIdx; x < xEndIdx; x++) {
         for (let y = yStartIdx; y < yEndIdx; y++) {
@@ -419,11 +420,11 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
             const bottom = yRescale(y + 1)
             const width = right - left
             const height = bottom - top
-            const xPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * width) / height
-            const yPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * height) / width
+            const xPadding = ((0.8 + 0.5 * (1 - 1 / zoomTransform.k)) * width) / height
+            const yPadding = ((0.8 + 0.5 * (1 - 1 / zoomTransform.k)) * height) / width
             ctx.beginPath()
-            ctx.shadowOffsetX = left + 1000
-            ctx.shadowOffsetY = top + 1000
+            ctx.shadowOffsetX = (left + 1000) * heatmapCanvasPixelRatio
+            ctx.shadowOffsetY = (top + 1000) * heatmapCanvasPixelRatio
             ctx.fillRect(-1000 - xPadding, -1000 - yPadding, right - left + xPadding * 2, bottom - top + yPadding * 2)
             ctx.closePath()
           }
