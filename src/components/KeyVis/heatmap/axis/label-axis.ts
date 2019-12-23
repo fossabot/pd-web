@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { Section, scaleSections } from '.'
+import { Section, DisplaySection, scaleSections } from '.'
 import { KeyAxisEntry } from '..'
 import { truncateString } from '../utils'
 import _ from 'lodash'
@@ -8,87 +8,81 @@ const labelAxisMargin = 4
 const labelAxisWidth = 28
 const labelTextPadding = 4
 const minTextHeight = 17
+const fill = '#333'
+const fillFocus = '#ccc'
+const stroke = '#fff'
+const textFill = 'white'
+const textFillFocus = '#333'
+const font = '500 12px Poppins'
+const focusFont = '700 12px Poppins'
 
-type Label<U> = Section<string, U>
+type Label = Section<string>
+type DisplayLabel = DisplaySection<string>
 
 export function labelAxisGroup(keyAxis: KeyAxisEntry[]) {
-  let scale = d3.scaleIdentity()
   let range: [number, number] = [0, 0]
   const groups = aggrKeyAxisLabel(keyAxis)
-
-  const labelAxisGroup = selection => {
-    let scaledGroups = groups.map(group => scaleSections(group, range, scale, () => ''))
-
-    const g = selection.selectAll('g').data(scaledGroups)
-
-    g.enter()
-      .append('g')
-      .attr('transform', (d, i) => `translate(${i * (labelAxisWidth + labelAxisMargin)}, 0)`)
-      .merge(g)
-      .call(labelAxis)
-
-    g.exit().remove()
-  }
-
-  labelAxisGroup.scale = function(val) {
-    scale = val
-    return this
-  }
 
   labelAxisGroup.range = function(val) {
     range = val
     return this
   }
 
+  function labelAxisGroup(
+    ctx: CanvasRenderingContext2D,
+    focusDomain: [number, number] | null,
+    scale: (idx: number) => number
+  ) {
+    const width = ctx.canvas.width
+    const height = ctx.canvas.height
+
+    let scaledGroups = groups.map(group => scaleSections(group, focusDomain, range, scale, () => ''))
+
+    ctx.clearRect(0, 0, width, height)
+    ctx.strokeStyle = stroke
+    ctx.lineWidth = 1
+    ctx.textBaseline = 'middle'
+    for (const [groupIdx, group] of scaledGroups.entries()) {
+      const marginLeft = groupIdx * (labelAxisWidth + labelAxisMargin)
+
+      for (const label of group) {
+        const width = labelAxisWidth
+        const height = label.endPos - label.startPos
+
+        ctx.fillStyle = label.focus ? fillFocus : fill
+        ctx.beginPath()
+        ctx.rect(marginLeft, label.startPos, width, height)
+        ctx.fill()
+        ctx.stroke()
+        ctx.closePath()
+
+        if (shouleShowLabelText(label)) {
+          ctx.font = label.focus ? focusFont : font
+          ctx.fillStyle = label.focus ? textFillFocus : textFill
+          ctx.translate(marginLeft + labelAxisWidth / 2 + 2, label.endPos - labelTextPadding)
+          ctx.rotate(-Math.PI / 2)
+          ctx.fillText(fitLabelText(label), 0, 0)
+          ctx.setTransform(1, 0, 0, 1, 0, 0)
+        }
+      }
+    }
+  }
+
   return labelAxisGroup
 }
 
-function labelAxis(selection) {
-  const rects = selection.selectAll('rect').data(d => {
-    return d
-  })
-  const texts = selection.selectAll('text').data(d => d)
-
-  rects
-    .enter()
-    .append('rect')
-    .attr('width', labelAxisWidth)
-    .attr('x', 0)
-    .attr('stroke', '#fff')
-    .merge(rects)
-    .attr('fill', label => (shouleHideLabel(label) ? '#333' : '#333'))
-    .attr('y', label => label.start)
-    .attr('height', label => label.end - label.start)
-
-  rects.exit().remove()
-
-  texts
-    .enter()
-    .append('text')
-    .attr('fill', 'white')
-    .attr('writing-mode', 'tb')
-    .attr('font-size', '12')
-    .attr('font-weight', '500')
-    .merge(texts)
-    .attr('transform', label => `translate(${labelAxisWidth / 2}, ${label.end - labelTextPadding}) rotate(180)`)
-    .text(label => fitLabelText(label))
-    .style('display', label => (shouleHideLabel(label) ? 'none' : ''))
-
-  texts.exit().remove()
+function shouleShowLabelText(label: DisplayLabel): boolean {
+  return label.endPos - label.startPos >= minTextHeight && label.val?.length !== 0
 }
 
-function shouleHideLabel(label: Label<number>): boolean {
-  return label.end - label.start < minTextHeight || label.val?.length === 0
-}
-
-function fitLabelText(label: Label<number>): string {
-  const rectWidth = label.end - label.start
+function fitLabelText(label: DisplayLabel): string {
+  const rectWidth = label.endPos - label.startPos
   const textLen = Math.floor(rectWidth / 7.5)
   return truncateString(label.val, textLen)
 }
 
-function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label<number>[][] {
-  let result: Label<number>[][] = _.times(4, () => [])
+function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label[][] {
+  let result: Label[][] = _.times(4, () => [])
 
   for (let groupIdx = 0; groupIdx < result.length; groupIdx++) {
     let lastLabel: string | null = null
@@ -101,8 +95,8 @@ function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label<number>[][] {
         if (startKeyIdx != null && lastLabel != null) {
           result[groupIdx].push({
             val: lastLabel,
-            start: startKeyIdx,
-            end: keyIdx
+            startIdx: startKeyIdx,
+            endIdx: keyIdx
           })
           startKeyIdx = null
         }

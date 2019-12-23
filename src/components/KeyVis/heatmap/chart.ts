@@ -31,15 +31,22 @@ type TooltipStatus = {
   y: number
 }
 
+type FocusStatus = {
+  xDomain: [number, number]
+  yDomain: [number, number]
+}
+
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
 
 export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
   let data: HeatmapData
+  let maxValue = 0
   let brightness = 1
   let colorTheme: ColorTheme
   let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
   let tooltipStatus: TooltipStatus = defaultTooltipStatus
+  let focusStatus: FocusStatus | null = null
   let isBrushing = false
   let width = 0
   let height = 0
@@ -49,7 +56,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   const MSAARatio = 4
 
   function updateBuffer() {
-    const maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
+    maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
     colorTheme = getColorTheme(maxValue, brightness)
     bufferCanvas = createBuffer(data.data[dataTag], colorTheme.backgroud)
   }
@@ -102,30 +109,52 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   }
 
   function heatmapChart() {
-    let axis = container.selectAll('svg').data([null])
-    axis = axis
+    let xHistogramCanvas = container.selectAll('canvas.x-histogram').data([null])
+    xHistogramCanvas = xHistogramCanvas
       .enter()
-      .append('svg')
+      .append('canvas')
+      .classed('x-histogram', true)
       .style('position', 'absolute')
-      .merge(axis)
-      .style('width', width + 'px')
-      .style('height', height + 'px')
+      .style('z-index', '100')
+      .merge(xHistogramCanvas)
+      .attr('width', canvasWidth)
+      .attr('height', 30)
+      .style('margin-top', height - 60 + 'px')
+      .style('margin-left', margin.left + 'px')
 
-    let tooltipLayer = container.selectAll('div').data([null])
-    tooltipLayer = tooltipLayer
+    let yHistogramCanvas = container.selectAll('canvas.y-histogram').data([null])
+    yHistogramCanvas = yHistogramCanvas
       .enter()
-      .append('div')
+      .append('canvas')
+      .classed('y-histogram', true)
       .style('position', 'absolute')
-      .style('pointer-events', 'none')
-      .merge(tooltipLayer)
-      .style('width', width + 'px')
-      .style('height', height + 'px')
+      .style('z-index', '101')
+      .merge(yHistogramCanvas)
+      .attr('width', 30)
+      .attr('height', canvasHeight)
+      .style('margin-top', margin.top + 'px')
+      .style('margin-left', width - 30 + 'px')
 
-    let canvas = container.selectAll('canvas').data([null])
+    let labelCanvas = container.selectAll('canvas.label').data([null])
+    labelCanvas = labelCanvas
+      .enter()
+      .append('canvas')
+      .classed('label', true)
+      .style('position', 'absolute')
+      .style('z-index', '102')
+      .merge(labelCanvas)
+      .attr('width', 60)
+      .attr('height', canvasHeight)
+      .style('margin-top', margin.top + 'px')
+      .style('margin-left', 20 + 'px')
 
+    let canvas = container.selectAll('canvas.heatmap').data([null])
     canvas = canvas
       .enter()
       .append('canvas')
+      .classed('heatmap', true)
+      .style('position', 'absolute')
+      .style('z-index', '103')
       .merge(canvas)
       .attr('width', canvasWidth * MSAARatio)
       .attr('height', canvasHeight * MSAARatio)
@@ -135,6 +164,27 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('margin-right', margin.right + 'px')
       .style('margin-bottom', margin.bottom + 'px')
       .style('margin-left', margin.left + 'px')
+
+    let axis = container.selectAll('svg').data([null])
+    axis = axis
+      .enter()
+      .append('svg')
+      .style('position', 'absolute')
+      .style('z-index', '200')
+      .merge(axis)
+      .style('width', width + 'px')
+      .style('height', height + 'px')
+
+    let tooltipLayer = container.selectAll('div').data([null])
+    tooltipLayer = tooltipLayer
+      .enter()
+      .append('div')
+      .style('position', 'absolute')
+      .style('z-index', '300')
+      .style('pointer-events', 'none')
+      .merge(tooltipLayer)
+      .style('width', width + 'px')
+      .style('height', height + 'px')
 
     const ctx: CanvasRenderingContext2D = canvas.node().getContext('2d')
     ctx.imageSmoothingEnabled = false
@@ -171,30 +221,6 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .classed('x-axis', true)
       .merge(xAxisG)
       .attr('transform', 'translate(' + margin.left + ',' + (height - 20) + ')')
-
-    let labelAxisG = axis.selectAll('g.label-axis').data([null])
-    labelAxisG = labelAxisG
-      .enter()
-      .append('g')
-      .classed('label-axis', true)
-      .merge(labelAxisG)
-      .attr('transform', 'translate(20, ' + margin.top + ')')
-
-    let xHistogramG = axis.selectAll('g.x-histogram').data([null])
-    xHistogramG = xHistogramG
-      .enter()
-      .append('g')
-      .classed('x-histogram', true)
-      .merge(xHistogramG)
-      .attr('transform', 'translate(' + margin.left + ',' + (height - 60) + ')')
-
-    let yHistogramG = axis.selectAll('g.y-histogram').data([null])
-    yHistogramG = yHistogramG
-      .enter()
-      .append('g')
-      .classed('y-histogram', true)
-      .merge(yHistogramG)
-      .attr('transform', 'translate(' + (width - 30) + ', ' + margin.top + ')')
 
     d3.zoom().transform(axis, zoomTransform)
 
@@ -250,9 +276,18 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       render()
     }
 
+    function focusPoint(x: number, y: number) {
+      focusStatus = { xDomain: [x, x + 0.001], yDomain: [y, y + 0.001] }
+    }
+
     function hoverBehavior(axis) {
       axis.on('mousemove', () => {
         showTooltips()
+        render()
+      })
+
+      axis.on('mouseout', () => {
+        if (!tooltipStatus.pinned) focusStatus = null
         render()
       })
     }
@@ -264,6 +299,13 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         const mouseCanvasOffset = d3.mouse(canvas.node())
         if (isNaN(mouseCanvasOffset[0])) return
 
+        const xRescale = zoomTransform.rescaleX(xScale)
+        const yRescale = zoomTransform.rescaleY(yScale)
+        const x = xRescale.invert(mouseCanvasOffset[0])
+        const y = yRescale.invert(mouseCanvasOffset[1])
+
+        focusPoint(x, y)
+
         if (
           mouseCanvasOffset[0] < 0 ||
           mouseCanvasOffset[0] > canvasWidth ||
@@ -271,13 +313,10 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
           mouseCanvasOffset[1] > canvasHeight
         ) {
           hideTooltips()
-          return
+        } else {
+          tooltipStatus.x = x
+          tooltipStatus.y = y
         }
-
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        tooltipStatus.x = rescaleX.invert(mouseCanvasOffset[0])
-        tooltipStatus.y = rescaleY.invert(mouseCanvasOffset[1])
       }
     }
 
@@ -317,14 +356,15 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
     axis.call(hoverBehavior)
 
     function render() {
-      const rescaleX = zoomTransform.rescaleX(xScale)
-      const rescaleY = zoomTransform.rescaleY(yScale)
+      renderHeatmap()
+      renderHighlight()
+      rednerAxis()
+      renderBrush()
+      renderTooltip()
+      renderCross()
+    }
 
-      histogramAxis(xHistogramG, yHistogramG, rescaleX, rescaleY)
-      labelAxisG.call(labelAxis.scale(rescaleY))
-      xAxisG.call(xAxis.scale(rescaleX))
-      hideAxisTicksWithoutLabel()
-
+    function renderHeatmap() {
       ctx.clearRect(0, 0, canvasWidth * MSAARatio, canvasHeight * MSAARatio)
       ctx.drawImage(
         bufferCanvas,
@@ -337,10 +377,62 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         canvasWidth * MSAARatio,
         canvasHeight * MSAARatio
       )
+    }
 
-      renderBrush()
-      renderTooltip()
-      renderCross()
+    function renderHighlight() {
+      const selectedData = data.data[dataTag]
+      const xLen = selectedData.length
+      const yLen = selectedData[0].length
+      const xRescale = zoomTransform.rescaleX(xScale)
+      const yRescale = zoomTransform.rescaleY(yScale)
+      const xStartIdx = Math.max(0, Math.floor(xScale.invert(0)))
+      const xEndIdx = Math.min(xLen - 1, Math.ceil(xScale.invert(canvasWidth)))
+      const yStartIdx = Math.max(0, Math.floor(yScale.invert(0)))
+      const yEndIdx = Math.min(yLen - 1, Math.ceil(yScale.invert(canvasHeight)))
+
+      ctx.shadowColor = '#ffff'
+      ctx.shadowBlur = (15 + 2 * (zoomTransform.k - 1)) * MSAARatio
+      ctx.fillStyle = 'blue'
+      for (let x = xStartIdx; x < xEndIdx; x++) {
+        for (let y = yStartIdx; y < yEndIdx; y++) {
+          if (selectedData[x][y] > maxValue / 3) {
+            const left = xRescale(x)
+            const top = yRescale(y)
+            const right = xRescale(x + 1)
+            const bottom = yRescale(y + 1)
+            const width = right - left
+            const height = bottom - top
+            const xPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * width) / height
+            const yPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * height) / width
+            ctx.beginPath()
+            ctx.shadowOffsetX = (left + 1000) * MSAARatio
+            ctx.shadowOffsetY = (top + 1000) * MSAARatio
+            ctx.fillRect(
+              (-1000 - xPadding) * MSAARatio,
+              (-1000 - yPadding) * MSAARatio,
+              (right - left + xPadding * 2) * MSAARatio,
+              (bottom - top + yPadding * 2) * MSAARatio
+            )
+            ctx.closePath()
+          }
+        }
+      }
+    }
+
+    function rednerAxis() {
+      const xRescale = zoomTransform.rescaleX(xScale)
+      const yRescale = zoomTransform.rescaleY(yScale)
+      histogramAxis(
+        xHistogramCanvas.node().getContext('2d'),
+        yHistogramCanvas.node().getContext('2d'),
+        focusStatus?.xDomain,
+        focusStatus?.yDomain,
+        xRescale,
+        yRescale
+      )
+      labelAxis(labelCanvas.node().getContext('2d'), focusStatus?.yDomain, yRescale)
+      xAxisG.call(xAxis.scale(xRescale))
+      hideAxisTicksWithoutLabel()
     }
 
     function renderBrush() {
@@ -402,9 +494,9 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       if (tooltipStatus.hidden) {
         tooltipLayer.selectAll('div').remove()
       } else {
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        const canvasOffset = [rescaleX(tooltipStatus.x), rescaleY(tooltipStatus.y)]
+        const xRescale = zoomTransform.rescaleX(xScale)
+        const yRescale = zoomTransform.rescaleY(yScale)
+        const canvasOffset = [xRescale(tooltipStatus.x), yRescale(tooltipStatus.y)]
         const clampX = x => _.clamp(x, 0, canvasWidth - tooltipSize.width)
         const clampY = y => _.clamp(y, 0, canvasHeight - tooltipSize.height)
         const rightX = margin.left + clampX(canvasOffset[0] + tooltipOffset.horizontal)
@@ -505,9 +597,9 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
 
     function renderCross() {
       if (tooltipStatus.pinned) {
-        const rescaleX = zoomTransform.rescaleX(xScale)
-        const rescaleY = zoomTransform.rescaleY(yScale)
-        const canvasOffset = [rescaleX(tooltipStatus.x) * MSAARatio, rescaleY(tooltipStatus.y) * MSAARatio]
+        const xRescale = zoomTransform.rescaleX(xScale)
+        const yRescale = zoomTransform.rescaleY(yScale)
+        const canvasOffset = [xRescale(tooltipStatus.x) * MSAARatio, yRescale(tooltipStatus.y) * MSAARatio]
         const crossCenterPadding = 3 * MSAARatio
         const crossBorder = 1 * MSAARatio
         const crossSize = 8 * MSAARatio

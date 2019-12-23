@@ -1,6 +1,10 @@
 import * as d3 from 'd3'
 import { Section, scaleSections } from '.'
 
+const fill = '#333'
+const fillFocus = '#ccc'
+const stroke = '#fff'
+
 export function histogram(data: number[][]) {
   let xRange: [number, number] = [0, 0]
   let yRange: [number, number] = [0, 0]
@@ -15,7 +19,17 @@ export function histogram(data: number[][]) {
     return this
   }
 
-  function histogram(xG, yG, xScale, yScale) {
+  function histogram(
+    xCtx: CanvasRenderingContext2D,
+    yCtx: CanvasRenderingContext2D,
+    xFocusDomain: [number, number] | null,
+    yFocusDomain: [number, number] | null,
+    xScale,
+    yScale
+  ) {
+    const xHeight = xCtx.canvas.height
+    const yWidth = yCtx.canvas.width
+
     const xLen = data.length
     const yLen = data[0].length
 
@@ -23,59 +37,58 @@ export function histogram(data: number[][]) {
     const xEndIdx = Math.min(xLen - 1, Math.ceil(xScale.invert(xRange[1])))
     const yStartIdx = Math.max(0, Math.floor(yScale.invert(yRange[0])))
     const yEndIdx = Math.min(yLen - 1, Math.ceil(yScale.invert(yRange[1])))
-    if (yEndIdx < yStartIdx) debugger
 
-    const xSum: Section<number, number>[] = []
-    const ySum: Section<number, number>[] = []
+    const xSum: Section<number>[] = []
+    const ySum: Section<number>[] = []
 
     for (let x = xStartIdx; x < xEndIdx; x++) {
       let sumVal = 0
       for (let y = yStartIdx; y < yEndIdx; y++) {
         sumVal += data[x][y]
       }
-      xSum.push({ val: sumVal, start: x, end: x + 1 })
+      xSum.push({ val: sumVal, startIdx: x, endIdx: x + 1 })
     }
     for (let y = yStartIdx; y < yEndIdx; y++) {
       let sumVal = 0
       for (let x = xStartIdx; x < xEndIdx; x++) {
         sumVal += data[x][y]
       }
-      ySum.push({ val: sumVal, start: y, end: y + 1 })
+      ySum.push({ val: sumVal, startIdx: y, endIdx: y + 1 })
     }
 
-    const xBins = scaleSections(xSum, xRange, xScale, (origin, val) => origin + val)
-    const yBins = scaleSections(ySum, yRange, yScale, (origin, val) => origin + val)
+    const xBins = scaleSections(xSum, xFocusDomain, xRange, xScale, (origin, val) => origin + val)
+    const yBins = scaleSections(ySum, yFocusDomain, yRange, yScale, (origin, val) => origin + val)
 
     const xBinsMax = d3.max(xBins, section => section.val)!
     const yBinsMax = d3.max(yBins, section => section.val)!
 
-    if (xBinsMax === 0) debugger
+    xCtx.clearRect(xRange[0], 0, xRange[1], xHeight)
+    xCtx.strokeStyle = stroke
+    xCtx.lineWidth = 1
+    for (const bin of xBins) {
+      const width = bin.endPos - bin.startPos
+      const height = (xHeight * bin.val) / xBinsMax
+      xCtx.fillStyle = bin.focus ? fillFocus : fill
+      xCtx.beginPath()
+      xCtx.rect(bin.startPos, xHeight - height, width, height)
+      xCtx.fill()
+      xCtx.stroke()
+      xCtx.closePath()
+    }
 
-    let xRect = xG.selectAll('rect').data(xBins)
-    xRect.exit().remove()
-    xRect = xRect
-      .enter()
-      .append('rect')
-      .attr('stroke', '#fff')
-      .attr('fill', '#333')
-      .merge(xRect)
-      .attr('x', d => d.start)
-      .attr('y', d => 30 - (30 * d.val) / xBinsMax)
-      .attr('width', d => d.end - d.start)
-      .attr('height', d => (30 * d.val) / xBinsMax)
-
-    let yRect = yG.selectAll('rect').data(yBins)
-    yRect.exit().remove()
-    yRect = yRect
-      .enter()
-      .append('rect')
-      .attr('stroke', '#fff')
-      .attr('fill', '#333')
-      .merge(yRect)
-      .attr('x', d => 30 - (30 * d.val) / yBinsMax)
-      .attr('y', d => d.start)
-      .attr('width', d => (30 * d.val) / yBinsMax)
-      .attr('height', d => d.end - d.start)
+    yCtx.clearRect(0, yRange[0], yWidth, yRange[1])
+    yCtx.strokeStyle = stroke
+    yCtx.lineWidth = 1
+    for (const bin of yBins) {
+      const width = (yWidth * bin.val) / yBinsMax
+      const height = bin.endPos - bin.startPos
+      yCtx.fillStyle = bin.focus ? fillFocus : fill
+      yCtx.beginPath()
+      yCtx.rect(yWidth - width, bin.startPos, width, height)
+      yCtx.fill()
+      yCtx.stroke()
+      yCtx.closePath()
+    }
   }
 
   return histogram
