@@ -9,6 +9,10 @@ export async function fetchDummyHeatmap() {
   return dummyData
 }
 
+let abortHeatmapCtrl, abortHeatmapSignal
+export function abortHeatmap() {
+  // abortHeatmapCtrl && abortHeatmapCtrl.abort()
+}
 export async function fetchHeatmap(selection?: HeatmapRange, type = 'write_bytes') {
   let url = `${APIURL}/heatmaps?type=${type}`
 
@@ -17,17 +21,26 @@ export async function fetchHeatmap(selection?: HeatmapRange, type = 'write_bytes
       .map(k => `&${k}=${selection[k]}`)
       .join('')
   }
+  abortHeatmap()
 
-  const data: HeatmapData = await sendRequest(url, 'get')
-  data.timeAxis = data.timeAxis.map(timestamp => timestamp * 1000)
+  abortHeatmapCtrl = new AbortController()
+  abortHeatmapSignal = abortHeatmapCtrl.signal
 
-  return data
+  try {
+    const data: HeatmapData = await sendRequest(url, 'get', { signal: abortHeatmapSignal })
+    data.timeAxis = data.timeAxis.map(timestamp => timestamp * 1000)
+
+    return data
+  } catch (e) {
+    throw e
+  }
 }
 
-export async function sendRequest(url: string, method: 'get') {
+export async function sendRequest(url: string, method: 'get', params: object) {
   const res = await fetch(url, {
     method: method,
-    mode: 'cors'
+    mode: 'cors',
+    ...params
   })
   return res.json()
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Heatmap, HeatmapData, HeatmapRange } from './heatmap'
-import { fetchDummyHeatmap, fetchHeatmap } from 'api/keyvis'
+import { fetchDummyHeatmap, fetchHeatmap, abortHeatmap } from 'api/keyvis'
 
 import ToolBar from './ToolBar'
 
@@ -26,7 +26,7 @@ const KeyVis = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!heatmapData) setHeatmapData(await fetchDummyHeatmap())
+      if (!heatmapData) _fetchHeatmap()
     }
     load()
   }, [])
@@ -43,12 +43,14 @@ const KeyVis = () => {
     return () => {
       console.log('side effect in keyvis cleanup')
       // _chart = null
+      abortHeatmap()
       timerId && clearInterval(timerId)
     }
   }, [isAutoFetch])
 
   const _fetchHeatmap = async (selection?: HeatmapRange) => {
     // loading effect
+    // abortHeatmapCtrl.abort()
     setLoading(true)
     if (!selection) {
       const endTime = Math.ceil(new Date().getTime() / 1000)
@@ -57,11 +59,17 @@ const KeyVis = () => {
         endTime
       }
     }
-    const data = await fetchHeatmap(selection, metricType)
+    try {
+      const data = await fetchHeatmap(selection, metricType)
+      setHeatmapData(data)
+      setOnBrush(false)
+      setLoading(false)
+    } catch (e) {
+      setLoading(false)
+    }
 
-    setHeatmapData(data)
-
-    setLoading(false)
+    try {
+    } catch (e) {}
   }
 
   const onAdjustBright = (type: 'up' | 'down' | 'reset') => {
@@ -87,7 +95,11 @@ const KeyVis = () => {
       enable = !isAutoFetch
     }
     setAutoFetch(enable as boolean)
-    if (enable) _fetchHeatmap()
+    if (enable) {
+      _chart.resetZoom()
+      setOnBrush(false)
+      _fetchHeatmap()
+    }
   }
 
   const onChangeMetric = async value => {
