@@ -15,8 +15,8 @@ const margin = {
 }
 
 const tooltipSize = {
-  width: 270,
-  height: 190
+  width: 255,
+  height: 205
 }
 
 const tooltipOffset = {
@@ -39,9 +39,14 @@ type FocusStatus = {
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
 const heatmapCanvasPixelRatio = window.devicePixelRatio * 1.5
 
-export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
+export function heatmapChart(
+  container,
+  data: HeatmapData,
+  dataTag: DataTag,
+  onBrush: (range: HeatmapRange) => void,
+  onZoom: () => void
+) {
   console.log('heatmap chart init')
-  let data: HeatmapData
   let maxValue = 0
   let brightness = 1
   let colorScheme: ColorScheme
@@ -54,42 +59,18 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   let height = 0
   let canvasWidth = 0
   let canvasHeight = 0
-  let dataTag: DataTag = 'written_bytes'
-
-  function updateBuffer() {
-    maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
-    colorScheme = getColorScheme(maxValue, brightness)
-    bufferCanvas = createBuffer(data.data[dataTag], colorScheme.backgroud)
-  }
-
-  heatmapChart.data = function(val: HeatmapData) {
-    data = val
-    updateBuffer()
-    tooltipStatus = defaultTooltipStatus
-    heatmapChart()
-  }
-
-  heatmapChart.dataTag = function(val: DataTag) {
-    dataTag = val
-    updateBuffer()
-    tooltipStatus = defaultTooltipStatus
-    heatmapChart()
-  }
 
   heatmapChart.brightness = function(val: number) {
     brightness = val
     updateBuffer()
-    heatmapChart()
   }
 
   heatmapChart.brush = function(enabled: boolean) {
     isBrushing = enabled
-    heatmapChart()
   }
 
   heatmapChart.resetZoom = function() {
     zoomTransform = d3.zoomIdentity
-    heatmapChart()
   }
 
   heatmapChart.size = function(newWidth, newHeight) {
@@ -105,9 +86,15 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
     height = newHeight
     canvasWidth = newCanvasWidth
     canvasHeight = newCanvasHeight
-
-    heatmapChart()
   }
+
+  function updateBuffer() {
+    maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
+    colorScheme = getColorScheme(maxValue, brightness)
+    bufferCanvas = createBuffer(data.data[dataTag], colorScheme.backgroud)
+  }
+
+  updateBuffer()
 
   function heatmapChart() {
     let xHistogramCanvas = container.selectAll('canvas.x-histogram').data([null])

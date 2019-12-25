@@ -19,7 +19,6 @@
     }
   }
 
-
   .tooltip {
     padding: 10px;
     color: #eee;
@@ -83,6 +82,7 @@
 
     button.time {
       color: #aaa;
+      line-height: 125%;
       &:not(:first-child) {
         margin-left: 20px;
       }
