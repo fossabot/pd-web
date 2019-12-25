@@ -4,7 +4,7 @@ import { HeatmapRange, HeatmapData, DataTag, tagUnit } from '.'
 import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
-import { getColorTheme, ColorTheme } from './color'
+import { getColorScheme, ColorScheme } from './color'
 import { truncateString, clickToCopyBehavior } from './utils'
 
 const margin = {
@@ -44,7 +44,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   let data: HeatmapData
   let maxValue = 0
   let brightness = 1
-  let colorTheme: ColorTheme
+  let colorScheme: ColorScheme
   let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
   let tooltipStatus: TooltipStatus = defaultTooltipStatus
@@ -58,8 +58,8 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
 
   function updateBuffer() {
     maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
-    colorTheme = getColorTheme(maxValue, brightness)
-    bufferCanvas = createBuffer(data.data[dataTag], colorTheme.backgroud)
+    colorScheme = getColorScheme(maxValue, brightness)
+    bufferCanvas = createBuffer(data.data[dataTag], colorScheme.backgroud)
   }
 
   heatmapChart.data = function(val: HeatmapData) {
@@ -551,8 +551,8 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
           .classed('value', true)
           .merge(valueText)
           .text(value)
-          .style('color', colorTheme.label(value))
-          .style('background-color', colorTheme.backgroud(value))
+          .style('color', colorScheme.label(value))
+          .style('background-color', colorScheme.backgroud(value))
 
         let unitText = valueDiv.selectAll('p.unit').data([null])
         unitText = unitText

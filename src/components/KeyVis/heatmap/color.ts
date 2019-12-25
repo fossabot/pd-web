@@ -20,12 +20,12 @@ const heatmapColor = d3.interpolateRgbBasis([
 ])
 
 export type ColorScale = (n: number) => d3.RGBColor | d3.HSLColor
-export type ColorTheme = {
+export type ColorScheme = {
   backgroud: ColorScale
   label: ColorScale
 }
 
-export function getColorTheme(maxValue: number, brightness: number): ColorTheme {
+export function getColorScheme(maxValue: number, brightness: number): ColorScheme {
   const logScale = (d3 as any).scaleSymlog().domain([0, maxValue / brightness])
   const backgroudColorScale = (d: number) => d3.color(heatmapColor(logScale(d)))!
   const labelColorScale = (d: number) =>
