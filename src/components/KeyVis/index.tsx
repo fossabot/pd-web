@@ -15,6 +15,7 @@ type ChartState = {
 }
 
 let _chart
+let latestFetchIdx = 0
 
 const KeyVis = props => {
   let brightLevel = 1
@@ -62,9 +63,12 @@ const KeyVis = props => {
         endTime
       }
     }
+    latestFetchIdx += 1
+    const fetchIdx = latestFetchIdx
     const data = await fetchHeatmap(selection, metricType)
-
-    setChartState({ heatmapData: data, metricType: metricType })
+    if (fetchIdx === latestFetchIdx) {
+      setChartState({ heatmapData: data, metricType: metricType })
+    }
   }
 
   const onAdjustBright = (type: 'up' | 'down' | 'reset') => {
