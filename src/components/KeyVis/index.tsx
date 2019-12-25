@@ -85,8 +85,10 @@ const KeyVis = props => {
         newBrightLevel = 1
         break
     }
-    if (newBrightLevel > 5 || newBrightLevel < 0.1) newBrightLevel = 1
-    setChartState(Object.assign(chartState, { brightness: brightLevel }))
+    if (newBrightLevel < 5 && newBrightLevel > 0.1) {
+      brightLevel = newBrightLevel
+      setChartState(Object.assign({}, chartState, { brightness: brightLevel }))
+    }
   }
 
   const onToggleAutoFetch = (enable: Boolean | undefined) => {
