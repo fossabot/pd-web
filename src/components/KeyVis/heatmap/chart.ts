@@ -98,8 +98,9 @@ export async function heatmapChart(
   }
 
   async function updateBuffer() {
-    colorScheme = getColorScheme(maxValue, brightness)
-    bufferCanvas = bufferCanvas = await createBuffer(data.data[dataTag], colorScheme.backgroud)
+    const newColorScheme = getColorScheme(maxValue, brightness)
+    bufferCanvas = bufferCanvas = await createBuffer(data.data[dataTag], newColorScheme.backgroud)
+    colorScheme = newColorScheme
   }
 
   await updateBuffer()

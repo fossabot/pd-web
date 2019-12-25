@@ -14,18 +14,18 @@ type ChartState = {
   metricType: DataTag
 }
 
+// TODO: using global state is not a good idea
 let _chart
 let latestFetchIdx = 0
 
 const KeyVis = props => {
-  let brightLevel = 1
-
   const [chartState, setChartState] = useState<ChartState>()
 
   const [isLoading, setLoading] = useState(false)
   const [isAutoFetch, setAutoFetch] = useState(false)
   const [isOnBrush, setOnBrush] = useState(false)
   const [dateRange, setDateRange] = useState(3600 * 12)
+  const [brightLevel, setBrightLevel] = useState(1)
   const [metricType, setMetricType] = useState<DataTag>('written_bytes')
 
   console.log('Keyvis Init')
@@ -71,29 +71,15 @@ const KeyVis = props => {
     }
   }
 
-  const onAdjustBright = (type: 'up' | 'down' | 'reset') => {
+  const onChangeBrightLevel = val => {
     if (!_chart) return
-    let newBrightLevel
-    switch (type) {
-      case 'up':
-        newBrightLevel = brightLevel * 2
-        break
-      case 'down':
-        newBrightLevel = brightLevel / 2
-        break
-      case 'reset':
-        newBrightLevel = 1
-        break
+    setBrightLevel(val)
+    const update = async () => {
+      await _chart.brightness(val)
+      setLoading(false)
     }
-    if (newBrightLevel < 5 && newBrightLevel > 0.1) {
-      brightLevel = newBrightLevel
-      const update = async () => {
-        await _chart.brightness(brightLevel)
-        setLoading(false)
-      }
-      setLoading(true)
-      update()
-    }
+    setLoading(true)
+    update()
   }
 
   const onToggleAutoFetch = (enable: Boolean | undefined) => {
@@ -154,12 +140,13 @@ const KeyVis = props => {
       <ToolBar
         dateRange={dateRange}
         metricType={metricType}
+        brightLevel={brightLevel}
         onToggleBrush={onToggleBrush}
         onResetZoom={onResetZoom}
         isLoading={isLoading}
         isAutoFetch={isAutoFetch}
         isOnBrush={isOnBrush}
-        onAdjustBright={onAdjustBright}
+        onChangeBrightLevel={onChangeBrightLevel}
         onChangeMetric={onChangeMetric}
         onChangeDateRange={onChangeDateRange}
         onToggleAutoFetch={onToggleAutoFetch}
