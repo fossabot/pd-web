@@ -25,3 +25,19 @@ function copyToClipboard(text: string) {
   document.execCommand('copy')
   input.remove()
 }
+
+export function doEventsOnYield(generator): Promise<undefined> {
+  return new Promise((resolve, reject) => {
+    let g = generator()
+    let advance = () => {
+      try {
+        let r = g.next()
+        if (r.done) resolve()
+      } catch (ex) {
+        reject(ex)
+      }
+      setTimeout(advance, 0)
+    }
+    advance()
+  })
+}

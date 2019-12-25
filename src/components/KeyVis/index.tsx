@@ -9,9 +9,10 @@ const DEFAULT_INTERVAL = 60000
 // Todo: define heatmap state, with auto check control, date range select, reset to zoom
 // fetchData ,  changeType, add loading state, change zoom level to reset autofetch,
 
-type DataState = {
+type ChartState = {
   heatmapData: HeatmapData
   metricType: DataTag
+  brightness: number
 }
 
 let _chart
@@ -19,7 +20,7 @@ let _chart
 const KeyVis = props => {
   let brightLevel = 1
 
-  const [dataState, setDataState] = useState<DataState>()
+  const [chartState, setChartState] = useState<ChartState>()
 
   const [isLoading, setLoading] = useState(false)
   const [isAutoFetch, setAutoFetch] = useState(false)
@@ -31,7 +32,8 @@ const KeyVis = props => {
 
   useEffect(() => {
     const load = async () => {
-      if (!dataState) setDataState({ heatmapData: await fetchDummyHeatmap(), metricType: metricType })
+      if (!chartState)
+        setChartState({ heatmapData: await fetchDummyHeatmap(), metricType: metricType, brightness: brightLevel })
     }
     load()
   }, [])
@@ -64,7 +66,7 @@ const KeyVis = props => {
     }
     const data = await fetchHeatmap(selection, metricType)
 
-    setDataState({ heatmapData: data, metricType: metricType })
+    setChartState({ heatmapData: data, metricType: metricType, brightness: brightLevel })
 
     setLoading(false)
   }
@@ -84,8 +86,7 @@ const KeyVis = props => {
         break
     }
     if (newBrightLevel > 5 || newBrightLevel < 0.1) newBrightLevel = 1
-    _chart.brightness(newBrightLevel)
-    _chart()
+    setChartState(Object.assign(chartState, { brightness: brightLevel }))
   }
 
   const onToggleAutoFetch = (enable: Boolean | undefined) => {
@@ -95,7 +96,6 @@ const KeyVis = props => {
     setAutoFetch(enable as boolean)
     if (enable) {
       _chart.resetZoom()
-      _chart()
       _fetchHeatmap()
     }
   }
@@ -108,7 +108,6 @@ const KeyVis = props => {
   const onChartInit = useCallback(
     chart => {
       _chart = chart
-      _chart()
     },
     [props]
   )
@@ -119,6 +118,7 @@ const KeyVis = props => {
   }
 
   const onResetZoom = () => {
+    // TODO
     _fetchHeatmap()
   }
 
@@ -126,7 +126,6 @@ const KeyVis = props => {
     setAutoFetch(false)
     setOnBrush(!isOnBrush)
     _chart.brush(!isOnBrush)
-    _chart()
   }
 
   const onBrush = useCallback(
@@ -134,7 +133,6 @@ const KeyVis = props => {
       setOnBrush(false)
       setAutoFetch(false)
       _fetchHeatmap(selection)
-      _chart()
     },
     [props]
   )
@@ -158,10 +156,11 @@ const KeyVis = props => {
         onChangeDateRange={onChangeDateRange}
         onToggleAutoFetch={onToggleAutoFetch}
       />
-      {dataState ? (
+      {chartState ? (
         <Heatmap
-          data={dataState.heatmapData}
-          dataTag={dataState.metricType}
+          data={chartState.heatmapData}
+          dataTag={chartState.metricType}
+          brightness={chartState.brightness}
           onBrush={onBrush}
           onChartInit={onChartInit}
           onZoom={onZoom}
