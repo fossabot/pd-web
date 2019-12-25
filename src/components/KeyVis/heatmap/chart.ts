@@ -243,7 +243,7 @@ export async function heatmapChart(
     const zoomBehavior = d3
       .zoom()
       .scaleExtent([1, 128])
-      .on('zoom', zoomed)
+      .on('zoom', zooming)
       .on('end', zoomEnd)
 
     function constrainBoucing(transform) {
@@ -271,7 +271,7 @@ export async function heatmapChart(
       )
     }
 
-    function zoomed() {
+    function zooming() {
       onZoom()
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'mousemove') {
         zoomTransform = constrainBoucing(d3.event.transform)
@@ -303,8 +303,10 @@ export async function heatmapChart(
       })
 
       axis.on('mouseout', () => {
-        if (!tooltipStatus.pinned) focusStatus = null
-        render()
+        if (!tooltipStatus.pinned && !isBrushing) {
+          focusStatus = null
+          render()
+        }
       })
     }
 
@@ -455,6 +457,7 @@ export async function heatmapChart(
             [canvasWidth, canvasHeight]
           ])
           .on('start', brushStart)
+          .on('brush', brushing)
           .on('end', brushEnd)
 
         let brushSvg = axis.selectAll('g.brush').data([null])
@@ -471,6 +474,19 @@ export async function heatmapChart(
           render()
         }
 
+        function brushing() {
+          const selection = d3.event.selection
+          if (selection) {
+            const xRescale = zoomTransform.rescaleX(xScale)
+            const yRescale = zoomTransform.rescaleY(yScale)
+            focusStatus = {
+              xDomain: [xRescale.invert(selection[0][0]), xRescale.invert(selection[1][0])],
+              yDomain: [yRescale.invert(selection[0][1]), yRescale.invert(selection[1][1])]
+            }
+            render()
+          }
+        }
+
         function brushEnd() {
           brushSvg.remove()
           isBrushing = false
@@ -478,12 +494,12 @@ export async function heatmapChart(
           const selection = d3.event.selection
           if (selection) {
             brush.move(brushSvg, null)
-            const domainTopLeft = zoomTransform.invert(selection[0])
-            const domainBottomRight = zoomTransform.invert(selection[1])
-            const startTime = data.timeAxis[Math.round(xScale.invert(domainTopLeft[0]))]
-            const endTime = data.timeAxis[Math.round(xScale.invert(domainBottomRight[0]))]
-            const startKey = data.keyAxis[Math.round(yScale.invert(domainTopLeft[1]))].key
-            const endKey = data.keyAxis[Math.round(yScale.invert(domainBottomRight[1]))].key
+            const xRescale = zoomTransform.rescaleX(xScale)
+            const yRescale = zoomTransform.rescaleY(yScale)
+            const startTime = data.timeAxis[Math.round(xRescale.invert(selection[0][0]))]
+            const endTime = data.timeAxis[Math.round(xRescale.invert(selection[1][0]))]
+            const startKey = data.keyAxis[Math.round(yRescale.invert(selection[0][1]))].key
+            const endKey = data.keyAxis[Math.round(yRescale.invert(selection[1][1]))].key
 
             onBrush({
               startTime: startTime,
