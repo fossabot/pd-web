@@ -37,7 +37,7 @@ type FocusStatus = {
 }
 
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
-const heatmapCanvasPixelRatio = window.devicePixelRatio * 1.5
+const heatmapCanvasPixelRatio = Math.max(2, window.devicePixelRatio)
 
 export async function heatmapChart(
   container,
@@ -322,7 +322,7 @@ export async function heatmapChart(
         const x = xRescale.invert(mouseCanvasOffset[0])
         const y = yRescale.invert(mouseCanvasOffset[1])
 
-        focusPoint(x, y)
+        if (isBrushing) focusPoint(x, y)
 
         if (
           mouseCanvasOffset[0] < 0 ||
