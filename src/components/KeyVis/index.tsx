@@ -12,7 +12,6 @@ const DEFAULT_INTERVAL = 60000
 type ChartState = {
   heatmapData: HeatmapData
   metricType: DataTag
-  brightness: number
 }
 
 let _chart
@@ -32,8 +31,7 @@ const KeyVis = props => {
 
   useEffect(() => {
     const load = async () => {
-      if (!chartState)
-        setChartState({ heatmapData: await fetchDummyHeatmap(), metricType: metricType, brightness: brightLevel })
+      if (!chartState) setChartState({ heatmapData: await fetchDummyHeatmap(), metricType: metricType })
     }
     load()
   }, [])
@@ -66,9 +64,7 @@ const KeyVis = props => {
     }
     const data = await fetchHeatmap(selection, metricType)
 
-    setChartState({ heatmapData: data, metricType: metricType, brightness: brightLevel })
-
-    setLoading(false)
+    setChartState({ heatmapData: data, metricType: metricType })
   }
 
   const onAdjustBright = (type: 'up' | 'down' | 'reset') => {
@@ -87,7 +83,12 @@ const KeyVis = props => {
     }
     if (newBrightLevel < 5 && newBrightLevel > 0.1) {
       brightLevel = newBrightLevel
-      setChartState(Object.assign({}, chartState, { brightness: brightLevel }))
+      const update = async () => {
+        await _chart.brightness(brightLevel)
+        setLoading(false)
+      }
+      setLoading(true)
+      update()
     }
   }
 
@@ -110,6 +111,7 @@ const KeyVis = props => {
   const onChartInit = useCallback(
     chart => {
       _chart = chart
+      setLoading(false)
     },
     [props]
   )
@@ -162,7 +164,6 @@ const KeyVis = props => {
         <Heatmap
           data={chartState.heatmapData}
           dataTag={chartState.metricType}
-          brightness={chartState.brightness}
           onBrush={onBrush}
           onChartInit={onChartInit}
           onZoom={onZoom}

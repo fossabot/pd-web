@@ -46,7 +46,6 @@ export function tagUnit(tag: DataTag): string {
 type HeatmapProps = {
   data: HeatmapData
   dataTag: DataTag
-  brightness: number
   onBrush: (selection: HeatmapRange) => void
   onZoom: () => void
   onChartInit: (any) => void
@@ -67,7 +66,6 @@ const _Heatmap: React.FunctionComponent<HeatmapProps> = props => {
           d3.select(container),
           props.data,
           props.dataTag,
-          props.brightness,
           props.onBrush,
           props.onZoom
         )

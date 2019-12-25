@@ -43,14 +43,14 @@ export async function heatmapChart(
   container,
   data: HeatmapData,
   dataTag: DataTag,
-  brightness: number,
   onBrush: (range: HeatmapRange) => void,
   onZoom: () => void
 ) {
   console.log('heatmap chart init')
   const maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
-  const colorScheme = getColorScheme(maxValue, brightness)
-  let bufferCanvas = await createBuffer(data.data[dataTag], colorScheme.backgroud)
+  let colorScheme: ColorScheme
+  let brightness = 1
+  let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
   let tooltipStatus: TooltipStatus = defaultTooltipStatus
   let focusStatus: FocusStatus | null = null
@@ -59,6 +59,17 @@ export async function heatmapChart(
   let height = 0
   let canvasWidth = 0
   let canvasHeight = 0
+
+  heatmapChart.brightness = async function(val: number) {
+    brightness = val
+    await updateBuffer()
+    heatmapChart()
+  }
+
+  heatmapChart.brush = function(enabled: boolean) {
+    isBrushing = enabled
+    heatmapChart()
+  }
 
   heatmapChart.brush = function(enabled: boolean) {
     isBrushing = enabled
@@ -86,6 +97,12 @@ export async function heatmapChart(
     heatmapChart()
   }
 
+  async function updateBuffer() {
+    colorScheme = getColorScheme(maxValue, brightness)
+    bufferCanvas = bufferCanvas = await createBuffer(data.data[dataTag], colorScheme.backgroud)
+  }
+
+  await updateBuffer()
   heatmapChart()
 
   function heatmapChart() {

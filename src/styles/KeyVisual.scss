@@ -19,6 +19,10 @@
     }
   }
 
+  svg, button {
+    user-select: none;
+  }
+
   .tooltip {
     padding: 10px;
     color: #eee;
