@@ -9,17 +9,17 @@
   }
 
   .PD-KeyVis-Toolbar {
-
     .group-icons-btn {
       border: 0;
       margin-top: -7px;
       .button {
-        border-left: 0!important;
+        border-left: 0 !important;
       }
     }
   }
 
-  svg, button {
+  svg,
+  button {
     user-select: none;
   }
 
@@ -58,7 +58,8 @@
 
     div.time {
       display: flex;
-      justify-content: space-between;
+      // justify-content: space-around;
+      white-space: pre-wrap;
     }
 
     button {
@@ -87,6 +88,7 @@
     button.time {
       color: #aaa;
       line-height: 125%;
+      width: 100%;
       &:not(:first-child) {
         margin-left: 20px;
       }

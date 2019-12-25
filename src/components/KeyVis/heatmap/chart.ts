@@ -591,9 +591,9 @@ export async function heatmapChart(
         timeText = timeTextEnter
           .append('button')
           .classed('time', true)
-          .merge(timeTextEnter)
-          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[d])))
-          .text(d => d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[d])))
+          .merge(timeText)
+          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
+          .text(d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
 
         let keyDiv = tooltipDiv.selectAll('div.key').data([keyIdx, keyIdx + 1])
         keyDiv = keyDiv
