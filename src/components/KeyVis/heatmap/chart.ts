@@ -4,7 +4,7 @@ import { HeatmapRange, HeatmapData, DataTag, tagUnit } from '.'
 import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
-import { getColorScheme, ColorScheme } from './color'
+import { getColorScheme, Legend, getLegend, ColorScheme } from './color'
 import { truncateString, clickToCopyBehavior } from './utils'
 
 const margin = {
@@ -81,8 +81,8 @@ export async function heatmapChart(
     heatmapChart()
   }
 
-  heatmapChart.getColorScheme = function() {
-    return colorScheme
+  heatmapChart.getLegend = function(): Legend[] {
+    return getLegend(colorScheme)
   }
 
   heatmapChart.size = function(newWidth, newHeight) {
