@@ -81,6 +81,10 @@ export async function heatmapChart(
     heatmapChart()
   }
 
+  heatmapChart.getColorScheme = function() {
+    return colorScheme
+  }
+
   heatmapChart.size = function(newWidth, newHeight) {
     const newCanvasWidth = newWidth - margin.left - margin.right
     const newCanvasHeight = newHeight - margin.top - margin.bottom
@@ -322,7 +326,7 @@ export async function heatmapChart(
         const x = xRescale.invert(mouseCanvasOffset[0])
         const y = yRescale.invert(mouseCanvasOffset[1])
 
-        if (isBrushing) focusPoint(x, y)
+        if (!isBrushing) focusPoint(x, y)
 
         if (
           mouseCanvasOffset[0] < 0 ||
