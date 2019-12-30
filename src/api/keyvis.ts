@@ -1,8 +1,8 @@
-import { HeatmapData, HeatmapRange } from 'components/KeyVis/heatmap'
+import { DataTag, HeatmapData, HeatmapRange } from 'components/KeyVis/heatmap'
 
 export const APIURL = `${process.env.NODE_ENV === 'development' ? 'http://172.16.4.4:2888' : ''}/pd/apis/keyvisual/v1`
 
-export async function fetchHeatmap(selection?: HeatmapRange, type = 'written_bytes') {
+export async function fetchHeatmap(selection?: HeatmapRange, type: DataTag = 'written_bytes') {
   let url = `${APIURL}/heatmaps?type=${type}`
 
   if (selection) {
@@ -11,16 +11,20 @@ export async function fetchHeatmap(selection?: HeatmapRange, type = 'written_byt
       .join('')
   }
 
-  const data: HeatmapData = await sendRequest(url, 'get')
-  data.timeAxis = data.timeAxis.map(timestamp => timestamp * 1000)
+  try {
+    const data: HeatmapData = await sendRequest(url, 'get')
 
-  return data
+    return data
+  } catch (e) {
+    throw e
+  }
 }
 
-export async function sendRequest(url: string, method: 'get') {
+export async function sendRequest(url: string, method: 'get', params?: object) {
   const res = await fetch(url, {
     method: method,
-    mode: 'cors'
+    mode: 'cors',
+    ...params
   })
   return res.json()
 }

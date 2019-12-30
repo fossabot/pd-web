@@ -1,10 +1,10 @@
 import * as d3 from 'd3'
-
 import { ColorScale } from './color'
+import { doEventsOnYield } from './utils'
 
-export function createBuffer(values: number[][], colorScale: ColorScale) {
+export async function createBuffer(values: number[][], colorScale: ColorScale): Promise<HTMLCanvasElement> {
   const valueWidth = values.length
-  const valueHeight = values[0].length || 0
+  const valueHeight = values[0].length
 
   const canvas = d3
     .create('canvas')
@@ -15,24 +15,27 @@ export function createBuffer(values: number[][], colorScale: ColorScale) {
   const sourceImageData = ctx.createImageData(valueWidth, valueHeight)
   const imageData = sourceImageData.data
 
-  for (let i = 0; i < imageData.length; i += 4) {
-    const pixel = i / 4
-    const x = pixel % valueWidth
-    const y = Math.floor(pixel / valueWidth)
+  await doEventsOnYield(function*() {
+    for (let i = 0; i < imageData.length; i += 4) {
+      if (i % (4 * 10000) === 0) yield
 
-    let color = d3.color(colorScale(values[x][y]))
+      const pixel = i / 4
+      const x = pixel % valueWidth
+      const y = Math.floor(pixel / valueWidth)
 
-    if (color) {
-      color = color.rgb()
+      let color = d3.color(colorScale(values[x][y]))
 
-      imageData[i] = color.r
-      imageData[i + 1] = color.g
-      imageData[i + 2] = color.b
-      imageData[i + 3] = 255 // Alpha
-    } else {
-      continue
+      if (color) {
+        color = color.rgb()
+        imageData[i] = color.r
+        imageData[i + 1] = color.g
+        imageData[i + 2] = color.b
+        imageData[i + 3] = 255 // Alpha
+      } else {
+        continue
+      }
     }
-  }
+  })
 
   ctx.putImageData(sourceImageData, 0, 0)
 

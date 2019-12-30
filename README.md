@@ -60,4 +60,4 @@ yarn test
 
 ## License
 
-MIT @ PingCAP-FE
+PD-Web is under the Apache 2.0 license. 
