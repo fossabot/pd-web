@@ -55,6 +55,7 @@ const KeyVis = props => {
 
   const _fetchHeatmap = async (selection?: HeatmapRange) => {
     // loading effect
+    // abortHeatmapCtrl.abort()
     setLoading(true)
     if (!selection) {
       const endTime = Math.ceil(new Date().getTime() / 1000)
@@ -63,12 +64,14 @@ const KeyVis = props => {
         endtime: endTime
       }
     }
+    setOnBrush(false)
     latestFetchIdx += 1
     const fetchIdx = latestFetchIdx
     const data = await fetchHeatmap(selection, metricType)
     if (fetchIdx === latestFetchIdx) {
       setChartState({ heatmapData: data, metricType: metricType })
     }
+    setLoading(false)
   }
 
   const onChangeBrightLevel = val => {
@@ -89,6 +92,7 @@ const KeyVis = props => {
     setAutoFetch(enable as boolean)
     if (enable) {
       _chart.resetZoom()
+      setOnBrush(false)
       _fetchHeatmap()
     }
   }

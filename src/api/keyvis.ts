@@ -17,15 +17,21 @@ export async function fetchHeatmap(selection?: HeatmapRange, type = 'write_bytes
       .join('')
   }
 
-  const data: HeatmapData = await sendRequest(url, 'get')
+  try {
+    const data: HeatmapData = await sendRequest(url, 'get')
+    data.timeAxis = data.timeAxis.map(timestamp => timestamp * 1000)
 
-  return data
+    return data
+  } catch (e) {
+    throw e
+  }
 }
 
-export async function sendRequest(url: string, method: 'get') {
+export async function sendRequest(url: string, method: 'get', params?: object) {
   const res = await fetch(url, {
     method: method,
-    mode: 'cors'
+    mode: 'cors',
+    ...params
   })
   return res.json()
 }
