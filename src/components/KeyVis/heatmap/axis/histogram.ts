@@ -67,7 +67,7 @@ export function histogram(data: number[][]) {
     xCtx.lineWidth = 1
     for (const bin of xBins) {
       const width = bin.endPos - bin.startPos
-      const height = (xHeight * bin.val) / xBinsMax
+      const height = bin.val / xBinsMax * xHeight
       xCtx.fillStyle = bin.focus ? fillFocus : fill
       xCtx.beginPath()
       xCtx.rect(bin.startPos, xHeight - height, width, height)
@@ -80,7 +80,7 @@ export function histogram(data: number[][]) {
     yCtx.strokeStyle = stroke
     yCtx.lineWidth = 1
     for (const bin of yBins) {
-      const width = (yWidth * bin.val) / yBinsMax
+      const width = (bin.val / yBinsMax) * yWidth
       const height = bin.endPos - bin.startPos
       yCtx.fillStyle = bin.focus ? fillFocus : fill
       yCtx.beginPath()

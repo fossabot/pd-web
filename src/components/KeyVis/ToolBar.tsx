@@ -6,13 +6,14 @@ export interface IKeyVisToolBarProps {
   isAutoFetch: boolean
   isOnBrush: boolean
   metricType: string
+  brightLevel: number
   dateRange: number
   onResetZoom: () => void
   onToggleBrush: () => void
   onChangeMetric: (string) => void
   onToggleAutoFetch: any
   onChangeDateRange: (number) => void
-  onAdjustBright: (string) => void
+  onChangeBrightLevel: (number) => void
 }
 
 export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
@@ -21,13 +22,27 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
   }
 
   handleDateRange = (e, { value }: DropdownProps) => {
-    this.setState({ dateRange: value })
     this.props.onChangeDateRange(value)
   }
 
   handleMetricChange = (e, { value }: DropdownProps) => {
-    this.setState({ metricType: value })
     this.props.onChangeMetric(value)
+  }
+
+  handleBrightLevelChange = (type: 'up' | 'down' | 'reset') => {
+    let newBrightLevel
+    switch (type) {
+      case 'up':
+        newBrightLevel = this.props.brightLevel * 2
+        break
+      case 'down':
+        newBrightLevel = this.props.brightLevel / 2
+        break
+      case 'reset':
+        newBrightLevel = 1
+        break
+    }
+    this.props.onChangeBrightLevel(newBrightLevel)
   }
 
   render() {
@@ -48,11 +63,11 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
     ]
 
     const MetricOptions = [
+      { text: 'Read Bytes', value: 'read_bytes' },
       {
         text: 'Write Bytes',
         value: 'written_bytes'
       },
-      { text: 'Read Bytes', value: 'read_bytes' },
       { text: 'Read Keys', value: 'read_keys' },
       { text: 'Write Keys', value: 'written_keys' },
       { text: 'All', value: 'integration' }
@@ -72,20 +87,22 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
               <Button.Group basic className="group-icons-btn">
                 <Button
                   icon="minus"
+                  className={this.props.brightLevel < 1 / 64 ? 'disabled' : ''}
                   onClick={() => {
-                    this.props.onAdjustBright('down')
+                    this.handleBrightLevelChange('down')
                   }}
                 />
                 <Button
                   icon="adjust"
                   onClick={() => {
-                    this.props.onAdjustBright('reset')
+                    this.handleBrightLevelChange('reset')
                   }}
                 />
                 <Button
                   icon="plus"
+                  className={this.props.brightLevel > 64 ? 'disabled' : ''}
                   onClick={() => {
-                    this.props.onAdjustBright('up')
+                    this.handleBrightLevelChange('up')
                   }}
                 />
               </Button.Group>

@@ -4,7 +4,7 @@ import { HeatmapRange, HeatmapData, DataTag, tagUnit } from '.'
 import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
-import { getColorTheme, ColorTheme } from './color'
+import { getColorScheme, Legend, getLegend, ColorScheme } from './color'
 import { truncateString, clickToCopyBehavior } from './utils'
 
 const margin = {
@@ -15,8 +15,8 @@ const margin = {
 }
 
 const tooltipSize = {
-  width: 270,
-  height: 190
+  width: 255,
+  height: 205
 }
 
 const tooltipOffset = {
@@ -37,13 +37,19 @@ type FocusStatus = {
 }
 
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
+const heatmapCanvasPixelRatio = Math.max(2, window.devicePixelRatio)
 
-export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, onZoom: () => void) {
+export async function heatmapChart(
+  container,
+  data: HeatmapData,
+  dataTag: DataTag,
+  onBrush: (range: HeatmapRange) => void,
+  onZoom: () => void
+) {
   console.log('heatmap chart init')
-  let data: HeatmapData
-  let maxValue = 0
+  const maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
+  let colorScheme: ColorScheme
   let brightness = 1
-  let colorTheme: ColorTheme
   let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
   let tooltipStatus: TooltipStatus = defaultTooltipStatus
@@ -53,32 +59,15 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   let height = 0
   let canvasWidth = 0
   let canvasHeight = 0
-  let dataTag: DataTag = 'written_bytes'
-  const MSAARatio = 4
 
-  function updateBuffer() {
-    maxValue = d3.max(data.data[dataTag].map(array => d3.max(array)!)) || 0
-    colorTheme = getColorTheme(maxValue, brightness)
-    bufferCanvas = createBuffer(data.data[dataTag], colorTheme.backgroud)
-  }
-
-  heatmapChart.data = function(val: HeatmapData) {
-    data = val
-    updateBuffer()
-    tooltipStatus = defaultTooltipStatus
-    heatmapChart()
-  }
-
-  heatmapChart.dataTag = function(val: DataTag) {
-    dataTag = val
-    updateBuffer()
-    tooltipStatus = defaultTooltipStatus
-    heatmapChart()
-  }
-
-  heatmapChart.brightness = function(val: number) {
+  heatmapChart.brightness = async function(val: number) {
     brightness = val
-    updateBuffer()
+    await updateBuffer()
+    heatmapChart()
+  }
+
+  heatmapChart.brush = function(enabled: boolean) {
+    isBrushing = enabled
     heatmapChart()
   }
 
@@ -90,6 +79,10 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
   heatmapChart.resetZoom = function() {
     zoomTransform = d3.zoomIdentity
     heatmapChart()
+  }
+
+  heatmapChart.getLegend = function(): Legend[] {
+    return getLegend(colorScheme)
   }
 
   heatmapChart.size = function(newWidth, newHeight) {
@@ -105,9 +98,17 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
     height = newHeight
     canvasWidth = newCanvasWidth
     canvasHeight = newCanvasHeight
-
     heatmapChart()
   }
+
+  async function updateBuffer() {
+    const newColorScheme = getColorScheme(maxValue, brightness)
+    bufferCanvas = bufferCanvas = await createBuffer(data.data[dataTag], newColorScheme.backgroud)
+    colorScheme = newColorScheme
+  }
+
+  await updateBuffer()
+  heatmapChart()
 
   function heatmapChart() {
     let xHistogramCanvas = container.selectAll('canvas.x-histogram').data([null])
@@ -118,10 +119,16 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('position', 'absolute')
       .style('z-index', '100')
       .merge(xHistogramCanvas)
-      .attr('width', canvasWidth)
-      .attr('height', 30)
+      .attr('width', canvasWidth * window.devicePixelRatio)
+      .attr('height', canvasHeight * window.devicePixelRatio)
+      .style('width', canvasWidth + 'px')
+      .style('height', 30 + 'px')
       .style('margin-top', height - 60 + 'px')
       .style('margin-left', margin.left + 'px')
+    xHistogramCanvas
+      .node()
+      .getContext('2d')
+      .scale(window.devicePixelRatio, window.devicePixelRatio)
 
     let yHistogramCanvas = container.selectAll('canvas.y-histogram').data([null])
     yHistogramCanvas = yHistogramCanvas
@@ -131,10 +138,16 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('position', 'absolute')
       .style('z-index', '101')
       .merge(yHistogramCanvas)
-      .attr('width', 30)
-      .attr('height', canvasHeight)
+      .attr('width', 30 * window.devicePixelRatio)
+      .attr('height', canvasHeight * window.devicePixelRatio)
+      .style('width', 30 + 'px')
+      .style('height', canvasHeight + 'px')
       .style('margin-top', margin.top + 'px')
       .style('margin-left', width - 30 + 'px')
+    yHistogramCanvas
+      .node()
+      .getContext('2d')
+      .scale(window.devicePixelRatio, window.devicePixelRatio)
 
     let labelCanvas = container.selectAll('canvas.label').data([null])
     labelCanvas = labelCanvas
@@ -144,10 +157,16 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('position', 'absolute')
       .style('z-index', '102')
       .merge(labelCanvas)
-      .attr('width', 60)
-      .attr('height', canvasHeight)
+      .style('width', 60 + 'px')
+      .style('height', canvasHeight + 'px')
+      .attr('width', 60 * window.devicePixelRatio)
+      .attr('height', canvasHeight * window.devicePixelRatio)
       .style('margin-top', margin.top + 'px')
       .style('margin-left', 20 + 'px')
+    labelCanvas
+      .node()
+      .getContext('2d')
+      .scale(window.devicePixelRatio, window.devicePixelRatio)
 
     let canvas = container.selectAll('canvas.heatmap').data([null])
     canvas = canvas
@@ -157,14 +176,17 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .style('position', 'absolute')
       .style('z-index', '103')
       .merge(canvas)
-      .attr('width', canvasWidth * MSAARatio)
-      .attr('height', canvasHeight * MSAARatio)
+      .attr('width', canvasWidth * heatmapCanvasPixelRatio)
+      .attr('height', canvasHeight * heatmapCanvasPixelRatio)
       .style('width', canvasWidth + 'px')
       .style('height', canvasHeight + 'px')
       .style('margin-top', margin.top + 'px')
       .style('margin-right', margin.right + 'px')
       .style('margin-bottom', margin.bottom + 'px')
       .style('margin-left', margin.left + 'px')
+    const ctx: CanvasRenderingContext2D = canvas.node().getContext('2d')
+    ctx.imageSmoothingEnabled = false
+    ctx.scale(heatmapCanvasPixelRatio, heatmapCanvasPixelRatio)
 
     let axis = container.selectAll('svg').data([null])
     axis = axis
@@ -186,9 +208,6 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       .merge(tooltipLayer)
       .style('width', width + 'px')
       .style('height', height + 'px')
-
-    const ctx: CanvasRenderingContext2D = canvas.node().getContext('2d')
-    ctx.imageSmoothingEnabled = false
 
     const xScale = d3
       .scaleLinear()
@@ -228,7 +247,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
     const zoomBehavior = d3
       .zoom()
       .scaleExtent([1, 128])
-      .on('zoom', zoomed)
+      .on('zoom', zooming)
       .on('end', zoomEnd)
 
     function constrainBoucing(transform) {
@@ -256,7 +275,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       )
     }
 
-    function zoomed() {
+    function zooming() {
       onZoom()
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'mousemove') {
         zoomTransform = constrainBoucing(d3.event.transform)
@@ -288,8 +307,10 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       })
 
       axis.on('mouseout', () => {
-        if (!tooltipStatus.pinned) focusStatus = null
-        render()
+        if (!tooltipStatus.pinned && !isBrushing) {
+          focusStatus = null
+          render()
+        }
       })
     }
 
@@ -305,7 +326,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         const x = xRescale.invert(mouseCanvasOffset[0])
         const y = yRescale.invert(mouseCanvasOffset[1])
 
-        focusPoint(x, y)
+        if (!isBrushing) focusPoint(x, y)
 
         if (
           mouseCanvasOffset[0] < 0 ||
@@ -358,7 +379,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
 
     function render() {
       renderHeatmap()
-      renderHighlight()
+      // renderHighlight()
       rednerAxis()
       renderBrush()
       renderTooltip()
@@ -366,7 +387,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
     }
 
     function renderHeatmap() {
-      ctx.clearRect(0, 0, canvasWidth * MSAARatio, canvasHeight * MSAARatio)
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight)
       ctx.drawImage(
         bufferCanvas,
         xScale.invert(zoomTransform.invertX(0)),
@@ -375,8 +396,8 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         yScale.invert(canvasHeight * (1 / zoomTransform.k)),
         0,
         0,
-        canvasWidth * MSAARatio,
-        canvasHeight * MSAARatio
+        canvasWidth,
+        canvasHeight
       )
     }
 
@@ -391,29 +412,24 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       const yStartIdx = Math.max(0, Math.floor(yScale.invert(0)))
       const yEndIdx = Math.min(yLen - 1, Math.ceil(yScale.invert(canvasHeight)))
 
-      ctx.shadowColor = '#ffff'
-      ctx.shadowBlur = (15 + 2 * (zoomTransform.k - 1)) * MSAARatio
+      ctx.shadowColor = '#fff'
+      ctx.shadowBlur = 10 + 1 * (zoomTransform.k - 1)
       ctx.fillStyle = 'blue'
       for (let x = xStartIdx; x < xEndIdx; x++) {
         for (let y = yStartIdx; y < yEndIdx; y++) {
-          if (selectedData[x][y] > maxValue / 3) {
+          if (selectedData[x][y] > maxValue / 2) {
             const left = xRescale(x)
             const top = yRescale(y)
             const right = xRescale(x + 1)
             const bottom = yRescale(y + 1)
             const width = right - left
             const height = bottom - top
-            const xPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * width) / height
-            const yPadding = ((2 + 2 * (1 - 1 / zoomTransform.k)) * height) / width
+            const xPadding = ((0.8 + 0.5 * (1 - 1 / zoomTransform.k)) * width) / height
+            const yPadding = ((0.8 + 0.5 * (1 - 1 / zoomTransform.k)) * height) / width
             ctx.beginPath()
-            ctx.shadowOffsetX = (left + 1000) * MSAARatio
-            ctx.shadowOffsetY = (top + 1000) * MSAARatio
-            ctx.fillRect(
-              (-1000 - xPadding) * MSAARatio,
-              (-1000 - yPadding) * MSAARatio,
-              (right - left + xPadding * 2) * MSAARatio,
-              (bottom - top + yPadding * 2) * MSAARatio
-            )
+            ctx.shadowOffsetX = (left + 1000) * heatmapCanvasPixelRatio
+            ctx.shadowOffsetY = (top + 1000) * heatmapCanvasPixelRatio
+            ctx.fillRect(-1000 - xPadding, -1000 - yPadding, right - left + xPadding * 2, bottom - top + yPadding * 2)
             ctx.closePath()
           }
         }
@@ -445,6 +461,7 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
             [canvasWidth, canvasHeight]
           ])
           .on('start', brushStart)
+          .on('brush', brushing)
           .on('end', brushEnd)
 
         let brushSvg = axis.selectAll('g.brush').data([null])
@@ -461,6 +478,19 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
           render()
         }
 
+        function brushing() {
+          const selection = d3.event.selection
+          if (selection) {
+            const xRescale = zoomTransform.rescaleX(xScale)
+            const yRescale = zoomTransform.rescaleY(yScale)
+            focusStatus = {
+              xDomain: [xRescale.invert(selection[0][0]), xRescale.invert(selection[1][0])],
+              yDomain: [yRescale.invert(selection[0][1]), yRescale.invert(selection[1][1])]
+            }
+            render()
+          }
+        }
+
         function brushEnd() {
           brushSvg.remove()
           isBrushing = false
@@ -468,12 +498,12 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
           const selection = d3.event.selection
           if (selection) {
             brush.move(brushSvg, null)
-            const domainTopLeft = zoomTransform.invert(selection[0])
-            const domainBottomRight = zoomTransform.invert(selection[1])
-            const startTime = data.timeAxis[Math.round(xScale.invert(domainTopLeft[0]))]
-            const endTime = data.timeAxis[Math.round(xScale.invert(domainBottomRight[0]))]
-            const startKey = data.keyAxis[Math.round(yScale.invert(domainTopLeft[1]))].key
-            const endKey = data.keyAxis[Math.round(yScale.invert(domainBottomRight[1]))].key
+            const xRescale = zoomTransform.rescaleX(xScale)
+            const yRescale = zoomTransform.rescaleY(yScale)
+            const startTime = data.timeAxis[Math.round(xRescale.invert(selection[0][0]))]
+            const endTime = data.timeAxis[Math.round(xRescale.invert(selection[1][0]))]
+            const startKey = data.keyAxis[Math.round(yRescale.invert(selection[0][1]))].key
+            const endKey = data.keyAxis[Math.round(yRescale.invert(selection[1][1]))].key
 
             onBrush({
               startTime: startTime,
@@ -538,8 +568,8 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
           .classed('value', true)
           .merge(valueText)
           .text(value)
-          .style('color', colorTheme.label(value))
-          .style('background-color', colorTheme.backgroud(value))
+          .style('color', colorScheme.label(value))
+          .style('background-color', colorScheme.backgroud(value))
 
         let unitText = valueDiv.selectAll('p.unit').data([null])
         unitText = unitText
@@ -565,9 +595,9 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
         timeText = timeTextEnter
           .append('button')
           .classed('time', true)
-          .merge(timeTextEnter)
-          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[d])))
-          .text(d => d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[d])))
+          .merge(timeText)
+          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
+          .text(d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
 
         let keyDiv = tooltipDiv.selectAll('div.key').data([keyIdx, keyIdx + 1])
         keyDiv = keyDiv
@@ -600,11 +630,11 @@ export function heatmapChart(container, onBrush: (range: HeatmapRange) => void, 
       if (tooltipStatus.pinned) {
         const xRescale = zoomTransform.rescaleX(xScale)
         const yRescale = zoomTransform.rescaleY(yScale)
-        const canvasOffset = [xRescale(tooltipStatus.x) * MSAARatio, yRescale(tooltipStatus.y) * MSAARatio]
-        const crossCenterPadding = 3 * MSAARatio
-        const crossBorder = 1 * MSAARatio
-        const crossSize = 8 * MSAARatio
-        const crossWidth = 2 * MSAARatio
+        const canvasOffset = [xRescale(tooltipStatus.x), yRescale(tooltipStatus.y)]
+        const crossCenterPadding = 3
+        const crossBorder = 1
+        const crossSize = 8
+        const crossWidth = 2
 
         ctx.lineWidth = crossWidth + 2 * crossBorder
         ctx.strokeStyle = '#111'
