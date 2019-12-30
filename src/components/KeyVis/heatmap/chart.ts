@@ -4,7 +4,7 @@ import { HeatmapRange, HeatmapData, DataTag, tagUnit } from '.'
 import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
-import { getColorScheme, Legend, getLegend, ColorScheme } from './color'
+import { getColorScheme, ColorScheme } from './color'
 import { truncateString, clickToCopyBehavior } from './utils'
 
 import legend from './legend'
@@ -13,7 +13,7 @@ const margin = {
   top: 25,
   right: 40,
   bottom: 70,
-  left: 90
+  left: 70
 }
 
 const tooltipSize = {
@@ -81,10 +81,6 @@ export async function heatmapChart(
   heatmapChart.resetZoom = function() {
     zoomTransform = d3.zoomIdentity
     heatmapChart()
-  }
-
-  heatmapChart.getLegend = function(): Legend[] {
-    return getLegend(colorScheme)
   }
 
   heatmapChart.size = function(newWidth, newHeight) {
@@ -164,7 +160,6 @@ export async function heatmapChart(
       .attr('width', 60 * window.devicePixelRatio)
       .attr('height', canvasHeight * window.devicePixelRatio)
       .style('margin-top', margin.top + 'px')
-      .style('margin-left', 20 + 'px')
     labelCanvas
       .node()
       .getContext('2d')
@@ -386,7 +381,7 @@ export async function heatmapChart(
       renderBrush()
       renderTooltip()
       renderCross()
-      legend(getLegend(colorScheme))
+      legend(colorScheme)
     }
 
     function renderHeatmap() {

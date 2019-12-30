@@ -106,7 +106,6 @@ const KeyVis = props => {
   const onChartInit = useCallback(
     chart => {
       _chart = chart
-      console.log(_chart.getLegend())
       setLoading(false)
     },
     [props]

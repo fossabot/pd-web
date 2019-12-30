@@ -1,61 +1,63 @@
-// @ts-nocheck
-
 import * as d3 from 'd3'
+import { ColorScheme } from './color'
+import _ from 'lodash'
 
-export default function(xdata) {
-  if (!xdata.length) return
-  if (typeof xdata[0].color === 'string') return
-  var data = xdata.map((d, idx) => {
-    d.color = d.backgroud.formatHex()
-    delete d.backgroud
-    d.idx = idx
-    return d
-  })
-  var extent = d3.extent(data, d => d.val)
+export default function(colorScheme: ColorScheme) {
+  let marginLeft = 70
+  let width = 620
+  let height = 50
+  let innerWidth = width - marginLeft * 2
+  let innerHeight = 26
+  let tickCount = 5
 
-  var padding = 29
-  var width = 620
-  var innerWidth = width - padding * 2
-  var barHeight = 18
-  var height = 48
+  let contaiiner = (d3 as any).select('.PD-Cluster-Legend')
 
-  var xScale = d3
+  let xScale = (d3 as any)
     .scaleSymlog()
+    .domain([colorScheme.maxValue / 1000, colorScheme.maxValue])
     .range([0, innerWidth])
-    .domain(extent)
 
-  var xAxis = d3.axisBottom().scale(xScale)
-  xAxis
-    .tickValues(data.map(i => i.val))
-    .tickFormat(d => d)
-    .tickSize([20])
-
-  var svg = d3
-    .select('.PD-Cluster-Legend')
-    .html('')
-    .append('svg')
+  let canvas = contaiiner.selectAll('canvas').data([null])
+  canvas = canvas
+    .enter()
+    .append('canvas')
+    .style('left', marginLeft + 'px')
+    .style('position', 'absolute')
+    .merge(canvas)
     .attr('width', width)
     .attr('height', height)
-  var g = svg.append('g').attr('transform', 'translate(' + padding + ', 0)')
 
-  var defs = svg.append('defs')
-  var linearGradient = defs.append('linearGradient').attr('id', 'myGradient')
-  linearGradient
-    .selectAll('stop')
-    .data(data)
+  const ctx: CanvasRenderingContext2D = canvas.node().getContext('2d')
+
+  for (let x = 0; x < innerWidth; x++) {
+    ctx.fillStyle = colorScheme.backgroud(xScale.invert(x)).toString()
+    ctx.fillRect(x, 0, 1, innerHeight)
+  }
+
+  let xAxis = d3
+    .axisBottom(xScale)
+    .ticks(10)
+    .tickValues(_.range(0, tickCount + 1).map(d => xScale.invert((innerWidth * d) / tickCount)))
+    .tickSize(innerHeight)
+
+  let svg = contaiiner.selectAll('svg').data([null])
+  svg = svg
     .enter()
-    .append('stop')
-    .attr('offset', d => d.idx * 0.16 * 100 + '%')
-    .attr('stop-color', d => d.color)
+    .append('svg')
+    .style('position', 'absolute')
+    .merge(svg)
+    .attr('width', width)
+    .attr('height', height)
 
-  g.append('rect')
-    .attr('width', innerWidth)
-    .attr('height', barHeight)
-    .style('fill', 'url(#myGradient)')
-
-  g.append('g')
-    .attr('transform', 'translate(0,0)')
+  let xAxisG = svg.selectAll('g').data([null])
+  xAxisG = xAxisG
+    .enter()
+    .append('g')
+    .attr('transform', 'translate(' + marginLeft + ', 0)')
+    .merge(xAxisG)
     .call(xAxis)
-    .select('.domain')
-    .remove()
+    .call(g => {
+      g.selectAll('.tick text').attr('y', innerHeight + 6)
+      g.selectAll('.domain').remove()
+    })
 }

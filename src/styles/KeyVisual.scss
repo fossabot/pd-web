@@ -31,6 +31,12 @@
     user-select: none;
   }
 
+  g.tick text {
+    font-family: 'Poppins';
+    font-size: 12px;
+    text-anchor: start;
+  }
+
   .tooltip {
     padding: 10px;
     color: #eee;
