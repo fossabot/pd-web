@@ -7,6 +7,8 @@ import { histogram } from './axis/histogram'
 import { getColorScheme, Legend, getLegend, ColorScheme } from './color'
 import { truncateString, clickToCopyBehavior } from './utils'
 
+import legend from './legend'
+
 const margin = {
   top: 25,
   right: 40,
@@ -384,6 +386,7 @@ export async function heatmapChart(
       renderBrush()
       renderTooltip()
       renderCross()
+      legend(getLegend(colorScheme))
     }
 
     function renderHeatmap() {

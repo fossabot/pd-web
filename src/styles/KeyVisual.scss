@@ -9,11 +9,19 @@
   }
 
   .PD-KeyVis-Toolbar {
+    .PD-Cluster-Legend {
+      position: relative;
+      top: 16px;
+    }
     .group-icons-btn {
       border: 0;
       margin-top: -7px;
       .button {
         border-left: 0 !important;
+      }
+
+      .icon {
+        color: #1b1c1d;
       }
     }
   }

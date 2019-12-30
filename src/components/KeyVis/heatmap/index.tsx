@@ -62,13 +62,7 @@ const _Heatmap: React.FunctionComponent<HeatmapProps> = props => {
       if (divRef.current != null) {
         console.log('side effect in heatmap inside')
         const container = divRef.current
-        chart = await heatmapChart(
-          d3.select(container),
-          props.data,
-          props.dataTag,
-          props.onBrush,
-          props.onZoom
-        )
+        chart = await heatmapChart(d3.select(container), props.data, props.dataTag, props.onBrush, props.onZoom)
         props.onChartInit(chart)
         const render = () => {
           const width = container.offsetWidth

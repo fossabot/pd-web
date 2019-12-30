@@ -47,6 +47,7 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
 
   render() {
     const { isAutoFetch, dateRange, isOnBrush, metricType } = this.props
+
     const DateRagneOptions = [
       {
         key: 0,
@@ -78,6 +79,7 @@ export default class KeyVisToolBar extends Component<IKeyVisToolBarProps> {
     return (
       <>
         <Menu icon="labeled" size="small" compact text fluid className="PD-KeyVis-Toolbar">
+          <div className="PD-Cluster-Legend"></div>
           <Menu.Menu position="right">
             <Menu.Item name="loading">
               <Loader active={this.props.isLoading} inline />
