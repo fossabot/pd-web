@@ -59,8 +59,8 @@ const KeyVis = props => {
     if (!selection) {
       const endTime = Math.ceil(new Date().getTime() / 1000)
       selection = {
-        startTime: endTime - dateRange,
-        endTime
+        starttime: endTime - dateRange,
+        endtime: endTime
       }
     }
     latestFetchIdx += 1
