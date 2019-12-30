@@ -67,6 +67,7 @@ const KeyVis = props => {
     setOnBrush(false)
     latestFetchIdx += 1
     const fetchIdx = latestFetchIdx
+    // FIXME: Outdated var metricType
     const data = await fetchHeatmap(selection, metricType)
     if (fetchIdx === latestFetchIdx) {
       setChartState({ heatmapData: data, metricType: metricType })
@@ -86,7 +87,7 @@ const KeyVis = props => {
   }
 
   const onToggleAutoFetch = (enable: Boolean | undefined) => {
-    if (enable == undefined) {
+    if (enable === undefined) {
       enable = !isAutoFetch
     }
     setAutoFetch(enable as boolean)
