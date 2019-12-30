@@ -45,6 +45,7 @@ export default function(colorScheme: ColorScheme) {
     .enter()
     .append('svg')
     .style('position', 'absolute')
+    .style('left', '0px')
     .merge(svg)
     .attr('width', width)
     .attr('height', height)

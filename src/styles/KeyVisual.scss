@@ -9,10 +9,16 @@
   }
 
   .PD-KeyVis-Toolbar {
+    display: flex;
+    flex-wrap: wrap-reverse;
+
     .PD-Cluster-Legend {
+      width: 530px;
       position: relative;
-      top: 16px;
+      height: 30px;
+      margin: 10px 0px;
     }
+
     .group-icons-btn {
       border: 0;
       margin-top: -7px;
