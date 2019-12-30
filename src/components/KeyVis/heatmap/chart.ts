@@ -213,12 +213,12 @@ export async function heatmapChart(
 
     const xScale = d3
       .scaleLinear()
-      .domain([0, data.timeAxis.length - 2])
+      .domain([0, data.timeAxis.length - 1])
       .range([0, canvasWidth])
 
     const yScale = d3
       .scaleLinear()
-      .domain([0, data.keyAxis.length - 2])
+      .domain([0, data.keyAxis.length - 1])
       .range([0, canvasHeight])
 
     const xAxis = d3
