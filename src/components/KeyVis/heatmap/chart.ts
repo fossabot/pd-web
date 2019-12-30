@@ -4,7 +4,7 @@ import { HeatmapRange, HeatmapData, DataTag, tagUnit } from '.'
 import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
-import { getColorScheme, ColorScheme } from './color'
+import { getColorScheme, Legend, getLegend, ColorScheme } from './color'
 import { truncateString, clickToCopyBehavior } from './utils'
 
 const margin = {
@@ -37,7 +37,7 @@ type FocusStatus = {
 }
 
 const defaultTooltipStatus = { pinned: false, hidden: true, x: 0, y: 0 }
-const heatmapCanvasPixelRatio = window.devicePixelRatio * 1.5
+const heatmapCanvasPixelRatio = Math.max(2, window.devicePixelRatio)
 
 export async function heatmapChart(
   container,
@@ -79,6 +79,10 @@ export async function heatmapChart(
   heatmapChart.resetZoom = function() {
     zoomTransform = d3.zoomIdentity
     heatmapChart()
+  }
+
+  heatmapChart.getLegend = function(): Legend[] {
+    return getLegend(colorScheme)
   }
 
   heatmapChart.size = function(newWidth, newHeight) {
@@ -243,7 +247,7 @@ export async function heatmapChart(
     const zoomBehavior = d3
       .zoom()
       .scaleExtent([1, 128])
-      .on('zoom', zoomed)
+      .on('zoom', zooming)
       .on('end', zoomEnd)
 
     function constrainBoucing(transform) {
@@ -271,7 +275,7 @@ export async function heatmapChart(
       )
     }
 
-    function zoomed() {
+    function zooming() {
       onZoom()
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'mousemove') {
         zoomTransform = constrainBoucing(d3.event.transform)
@@ -303,8 +307,10 @@ export async function heatmapChart(
       })
 
       axis.on('mouseout', () => {
-        if (!tooltipStatus.pinned) focusStatus = null
-        render()
+        if (!tooltipStatus.pinned && !isBrushing) {
+          focusStatus = null
+          render()
+        }
       })
     }
 
@@ -320,7 +326,7 @@ export async function heatmapChart(
         const x = xRescale.invert(mouseCanvasOffset[0])
         const y = yRescale.invert(mouseCanvasOffset[1])
 
-        focusPoint(x, y)
+        if (!isBrushing) focusPoint(x, y)
 
         if (
           mouseCanvasOffset[0] < 0 ||
@@ -455,6 +461,7 @@ export async function heatmapChart(
             [canvasWidth, canvasHeight]
           ])
           .on('start', brushStart)
+          .on('brush', brushing)
           .on('end', brushEnd)
 
         let brushSvg = axis.selectAll('g.brush').data([null])
@@ -471,6 +478,19 @@ export async function heatmapChart(
           render()
         }
 
+        function brushing() {
+          const selection = d3.event.selection
+          if (selection) {
+            const xRescale = zoomTransform.rescaleX(xScale)
+            const yRescale = zoomTransform.rescaleY(yScale)
+            focusStatus = {
+              xDomain: [xRescale.invert(selection[0][0]), xRescale.invert(selection[1][0])],
+              yDomain: [yRescale.invert(selection[0][1]), yRescale.invert(selection[1][1])]
+            }
+            render()
+          }
+        }
+
         function brushEnd() {
           brushSvg.remove()
           isBrushing = false
@@ -478,12 +498,12 @@ export async function heatmapChart(
           const selection = d3.event.selection
           if (selection) {
             brush.move(brushSvg, null)
-            const domainTopLeft = zoomTransform.invert(selection[0])
-            const domainBottomRight = zoomTransform.invert(selection[1])
-            const startTime = data.timeAxis[Math.round(xScale.invert(domainTopLeft[0]))]
-            const endTime = data.timeAxis[Math.round(xScale.invert(domainBottomRight[0]))]
-            const startKey = data.keyAxis[Math.round(yScale.invert(domainTopLeft[1]))].key
-            const endKey = data.keyAxis[Math.round(yScale.invert(domainBottomRight[1]))].key
+            const xRescale = zoomTransform.rescaleX(xScale)
+            const yRescale = zoomTransform.rescaleY(yScale)
+            const startTime = data.timeAxis[Math.round(xRescale.invert(selection[0][0]))]
+            const endTime = data.timeAxis[Math.round(xRescale.invert(selection[1][0]))]
+            const startKey = data.keyAxis[Math.round(yRescale.invert(selection[0][1]))].key
+            const endKey = data.keyAxis[Math.round(yRescale.invert(selection[1][1]))].key
 
             onBrush({
               startTime: startTime,
@@ -575,9 +595,9 @@ export async function heatmapChart(
         timeText = timeTextEnter
           .append('button')
           .classed('time', true)
-          .merge(timeTextEnter)
-          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[d])))
-          .text(d => d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[d])))
+          .merge(timeText)
+          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
+          .text(d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
 
         let keyDiv = tooltipDiv.selectAll('div.key').data([keyIdx, keyIdx + 1])
         keyDiv = keyDiv
