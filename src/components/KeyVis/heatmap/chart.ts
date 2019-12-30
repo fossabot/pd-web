@@ -225,7 +225,7 @@ export async function heatmapChart(
       .axisBottom(xScale)
       .tickFormat(idx =>
         data.timeAxis[idx as number] !== undefined
-          ? d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[idx as number]))
+          ? d3.timeFormat('%Y-%m-%d %H:%M:%S')(new Date(data.timeAxis[idx as number] * 1000))
           : ''
       )
       .ticks(width / 270)
@@ -509,10 +509,10 @@ export async function heatmapChart(
             const endKey = data.keyAxis[Math.round(yRescale.invert(selection[1][1]))].key
 
             onBrush({
-              startTime: startTime,
-              endTime: endTime,
-              startKey: startKey,
-              endKey: endKey
+              starttime: startTime,
+              endtime: endTime,
+              startkey: startKey,
+              endkey: endKey
             })
           }
 
@@ -599,8 +599,8 @@ export async function heatmapChart(
           .append('button')
           .classed('time', true)
           .merge(timeText)
-          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
-          .text(d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d])))
+          .call(clickToCopyBehavior, d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d] * 1000)))
+          .text(d => d3.timeFormat('%Y-%m-%d\n%H:%M:%S')(new Date(data.timeAxis[d] * 1000)))
 
         let keyDiv = tooltipDiv.selectAll('div.key').data([keyIdx, keyIdx + 1])
         keyDiv = keyDiv

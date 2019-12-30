@@ -3,10 +3,10 @@ import * as d3 from 'd3'
 import { heatmapChart } from './chart'
 
 export type HeatmapRange = {
-  startTime?: number
-  endTime?: number
-  startKey?: string
-  endKey?: string
+  starttime?: number
+  endtime?: number
+  startkey?: string
+  endkey?: string
 }
 
 export type KeyAxisEntry = {
