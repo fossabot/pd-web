@@ -54,7 +54,7 @@ export async function heatmapChart(
   let brightness = 1
   let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
-  let tooltipStatus: TooltipStatus = defaultTooltipStatus
+  let tooltipStatus: TooltipStatus = _.clone(defaultTooltipStatus)
   let focusStatus: FocusStatus | null = null
   let isBrushing = false
   let width = 0
@@ -503,10 +503,10 @@ export async function heatmapChart(
             brush.move(brushSvg, null)
             const xRescale = zoomTransform.rescaleX(xScale)
             const yRescale = zoomTransform.rescaleY(yScale)
-            const startTime = data.timeAxis[Math.round(xRescale.invert(selection[0][0]))]
-            const endTime = data.timeAxis[Math.round(xRescale.invert(selection[1][0]))]
-            const startKey = data.keyAxis[Math.round(yRescale.invert(selection[0][1]))].key
-            const endKey = data.keyAxis[Math.round(yRescale.invert(selection[1][1]))].key
+            const startTime = data.timeAxis[Math.floor(xRescale.invert(selection[0][0]))]
+            const endTime = data.timeAxis[Math.ceil(xRescale.invert(selection[1][0]))]
+            const startKey = data.keyAxis[Math.floor(yRescale.invert(selection[0][1]))].key
+            const endKey = data.keyAxis[Math.ceil(yRescale.invert(selection[1][1]))].key
 
             onBrush({
               starttime: startTime,
@@ -555,7 +555,7 @@ export async function heatmapChart(
 
         const timeIdx = Math.floor(tooltipStatus.x)
         const keyIdx = Math.floor(tooltipStatus.y)
-        const value = data.data[dataTag][timeIdx][keyIdx]
+        const value = data.data[dataTag]?.[timeIdx]?.[keyIdx]
 
         let valueDiv = tooltipDiv.selectAll('div.value').data([null])
         valueDiv = valueDiv
