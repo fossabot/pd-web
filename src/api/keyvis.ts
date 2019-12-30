@@ -1,4 +1,4 @@
-import { HeatmapData, HeatmapRange } from 'components/KeyVis/heatmap'
+import { DataTag, HeatmapData, HeatmapRange } from 'components/KeyVis/heatmap'
 
 const dummyData: HeatmapData = require('fixtures/dummydata.json')
 
@@ -8,7 +8,7 @@ export async function fetchDummyHeatmap() {
   return dummyData
 }
 
-export async function fetchHeatmap(selection?: HeatmapRange, type = 'write_bytes') {
+export async function fetchHeatmap(selection?: HeatmapRange, type: DataTag = 'written_bytes'): Promise<HeatmapData> {
   let url = `${APIURL}/heatmaps?type=${type}`
 
   if (selection) {
@@ -17,12 +17,7 @@ export async function fetchHeatmap(selection?: HeatmapRange, type = 'write_bytes
       .join('')
   }
 
-  try {
-    const data: HeatmapData = await sendRequest(url, 'get')
-    return data
-  } catch (e) {
-    throw e
-  }
+  return await sendRequest(url, 'get')
 }
 
 export async function sendRequest(url: string, method: 'get', params?: object) {
