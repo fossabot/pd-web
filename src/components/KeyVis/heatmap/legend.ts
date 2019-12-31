@@ -4,7 +4,7 @@ import _ from 'lodash'
 
 export default function(colorScheme: ColorScheme) {
   let marginLeft = 70
-  let width = 620
+  let width = 500
   let height = 50
   let innerWidth = width - marginLeft * 2
   let innerHeight = 26
