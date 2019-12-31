@@ -56,7 +56,7 @@ const KeyVis = props => {
 
   useEffect(() => {
     _fetchHeatmap()
-  }, [selection, metricType])
+  }, [selection, metricType, dateRange])
 
   const _fetchHeatmap = async () => {
     let range = selection
@@ -75,7 +75,6 @@ const KeyVis = props => {
     if (fetchIdx === latestFetchIdx) {
       setChartState({ heatmapData: data, metricType: metricType })
     }
-    setLoading(false)
   }
 
   const onChangeBrightLevel = val => {
