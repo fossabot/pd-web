@@ -71,5 +71,6 @@ export default function(colorScheme: ColorScheme, dataTag: DataTag) {
     .append('p')
     .classed('unit', true)
     .style('margin-left', marginLeft + innerWidth + 30 + 'px')
+    .merge(unitLabel)
     .text(tagUnit(dataTag))
 }
