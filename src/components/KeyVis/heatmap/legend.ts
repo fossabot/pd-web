@@ -70,6 +70,6 @@ export default function(colorScheme: ColorScheme, dataTag: DataTag) {
     .enter()
     .append('p')
     .classed('unit', true)
-    .style('margin-left', marginLeft + innerWidth + 40 + 'px')
+    .style('margin-left', marginLeft + innerWidth + 30 + 'px')
     .text(tagUnit(dataTag))
 }
