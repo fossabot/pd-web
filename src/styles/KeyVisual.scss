@@ -13,10 +13,17 @@
     flex-wrap: wrap-reverse;
 
     .PD-Cluster-Legend {
-      width: 430px;
+      width: 410px;
       position: relative;
       height: 30px;
       margin: 10px 0px;
+
+      p.unit {
+        font-family: 'Poppins';
+        font-weight: 500;
+        color: #666;
+        margin-top: 5px;
+      }
     }
 
     .group-icons-btn {

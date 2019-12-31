@@ -5,7 +5,7 @@ import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
 import { getColorScheme, ColorScheme } from './color'
-import { truncateString, clickToCopyBehavior } from './utils'
+import { withUnit, truncateString, clickToCopyBehavior } from './utils'
 
 import legend from './legend'
 
@@ -381,7 +381,7 @@ export async function heatmapChart(
       renderBrush()
       renderTooltip()
       renderCross()
-      legend(colorScheme)
+      legend(colorScheme, dataTag)
     }
 
     function renderHeatmap() {
@@ -565,7 +565,7 @@ export async function heatmapChart(
           .append('p')
           .classed('value', true)
           .merge(valueText)
-          .text(value)
+          .text(withUnit(value))
           .style('color', colorScheme.label(value))
           .style('background-color', colorScheme.backgroud(value))
 

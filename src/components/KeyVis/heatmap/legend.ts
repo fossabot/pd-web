@@ -1,12 +1,15 @@
 import * as d3 from 'd3'
 import { ColorScheme } from './color'
+import { withUnit } from './utils'
+import { DataTag, tagUnit } from '.'
 import _ from 'lodash'
 
-export default function(colorScheme: ColorScheme) {
+export default function(colorScheme: ColorScheme, dataTag: DataTag) {
   let marginLeft = 70
+  let marginRight = 120
   let width = 500
   let height = 50
-  let innerWidth = width - marginLeft * 2
+  let innerWidth = width - marginLeft - marginRight
   let innerHeight = 26
   let tickCount = 5
 
@@ -36,9 +39,9 @@ export default function(colorScheme: ColorScheme) {
 
   let xAxis = d3
     .axisBottom(xScale)
-    .ticks(10)
     .tickValues(_.range(0, tickCount + 1).map(d => xScale.invert((innerWidth * d) / tickCount)))
     .tickSize(innerHeight)
+    .tickFormat(d => withUnit(d as number))
 
   let svg = contaiiner.selectAll('svg').data([null])
   svg = svg
@@ -61,4 +64,12 @@ export default function(colorScheme: ColorScheme) {
       g.selectAll('.tick text').attr('y', innerHeight + 6)
       g.selectAll('.domain').remove()
     })
+
+  let unitLabel = contaiiner.selectAll('p').data([null])
+  unitLabel = unitLabel
+    .enter()
+    .append('p')
+    .classed('unit', true)
+    .style('margin-left', marginLeft + innerWidth + 40 + 'px')
+    .text(tagUnit(dataTag))
 }

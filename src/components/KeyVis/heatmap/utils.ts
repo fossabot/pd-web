@@ -1,5 +1,18 @@
 import * as d3 from 'd3'
 
+export function withUnit(val: number): string {
+  val = val || 0
+  if (val > 1024 * 1024 * 1024) {
+    return (val / 1024 / 1024 / 1024).toFixed(2) + ' G'
+  } else if (val > 1024 * 1024) {
+    return (val / 1024 / 1024).toFixed(2) + ' M'
+  } else if (val > 1024) {
+    return (val / 1024).toFixed(2) + ' K'
+  } else {
+    return val.toFixed(2)
+  }
+}
+
 export function truncateString(str: string, len: number): string {
   if (str.length > len) {
     return str.substr(0, len / 2 - 1) + '....' + str.substr(str.length - len / 2 + 1, str.length)
