@@ -4,6 +4,54 @@ import { fetchDummyHeatmap, fetchHeatmap } from 'api/keyvis'
 
 import ToolBar from './ToolBar'
 
+type CacheEntry = {
+  metricType: DataTag
+  dateRange: number
+  expireTime: number
+  data: HeatmapData
+}
+
+const CACHE_EXPRIE_SECS = 60
+
+class HeatmapCache {
+  cache: CacheEntry[] = []
+  latestFetchIdx = 0
+
+  async fetch(range: number | HeatmapRange, metricType: DataTag): Promise<HeatmapData | undefined> {
+    let selection
+    if (typeof range === 'number') {
+      const endTime = Math.ceil(new Date().getTime() / 1000)
+      this.cache = this.cache.filter(entry => entry.expireTime > endTime)
+      const entry = this.cache.find(entry => entry.dateRange === range && entry.metricType === metricType)
+      if (entry) {
+        return entry.data
+      } else {
+        selection = {
+          starttime: endTime - range,
+          endtime: endTime
+        }
+      }
+    } else {
+      selection = range
+    }
+
+    this.latestFetchIdx += 1
+    const fetchIdx = this.latestFetchIdx
+    const data = await fetchHeatmap(selection, metricType)
+    if (fetchIdx === this.latestFetchIdx) {
+      if (typeof range === 'number') {
+        this.cache.push({
+          dateRange: range,
+          metricType: metricType,
+          expireTime: new Date().getTime() / 1000 + CACHE_EXPRIE_SECS,
+          data: data
+        })
+      }
+      return data
+    }
+  }
+}
+
 const DEFAULT_INTERVAL = 60000
 
 // Todo: define heatmap state, with auto check control, date range select, reset to zoom
@@ -16,7 +64,7 @@ type ChartState = {
 
 // TODO: using global state is not a good idea
 let _chart
-let latestFetchIdx = 0
+let cache = new HeatmapCache()
 
 const KeyVis = props => {
   const [chartState, setChartState] = useState<ChartState>()
@@ -59,22 +107,10 @@ const KeyVis = props => {
   }, [selection, metricType, dateRange])
 
   const _fetchHeatmap = async () => {
-    let range = selection
-    if (!range) {
-      const endTime = Math.ceil(new Date().getTime() / 1000)
-      range = {
-        starttime: endTime - dateRange,
-        endtime: endTime
-      }
-    }
     setLoading(true)
     setOnBrush(false)
-    latestFetchIdx += 1
-    const fetchIdx = latestFetchIdx
-    const data = await fetchHeatmap(range, metricType)
-    if (fetchIdx === latestFetchIdx) {
-      setChartState({ heatmapData: data, metricType: metricType })
-    }
+    const data = await cache.fetch(selection || dateRange, metricType)
+    setChartState({ heatmapData: data!, metricType: metricType })
   }
 
   const onChangeBrightLevel = val => {
