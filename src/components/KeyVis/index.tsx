@@ -21,6 +21,7 @@ let latestFetchIdx = 0
 const KeyVis = props => {
   const [chartState, setChartState] = useState<ChartState>()
 
+  const [selection, setSelection] = useState<HeatmapRange | null>(null)
   const [isLoading, setLoading] = useState(false)
   const [isAutoFetch, setAutoFetch] = useState(false)
   const [isOnBrush, setOnBrush] = useState(false)
@@ -53,26 +54,27 @@ const KeyVis = props => {
     }
   }, [isAutoFetch])
 
-  const _fetchHeatmap = async (selection?: HeatmapRange) => {
-    // loading effect
-    // abortHeatmapCtrl.abort()
-    setLoading(true)
-    if (!selection) {
+  useEffect(() => {
+    _fetchHeatmap()
+  }, [selection, metricType, dateRange])
+
+  const _fetchHeatmap = async () => {
+    let range = selection
+    if (!range) {
       const endTime = Math.ceil(new Date().getTime() / 1000)
-      selection = {
+      range = {
         starttime: endTime - dateRange,
         endtime: endTime
       }
     }
+    setLoading(true)
     setOnBrush(false)
     latestFetchIdx += 1
     const fetchIdx = latestFetchIdx
-    // FIXME: Outdated var metricType
-    const data = await fetchHeatmap(selection, metricType)
+    const data = await fetchHeatmap(range, metricType)
     if (fetchIdx === latestFetchIdx) {
       setChartState({ heatmapData: data, metricType: metricType })
     }
-    setLoading(false)
   }
 
   const onChangeBrightLevel = val => {
@@ -98,15 +100,13 @@ const KeyVis = props => {
     }
   }
 
-  const onChangeMetric = async value => {
+  const onChangeMetric = value => {
     setMetricType(value)
-    await _fetchHeatmap()
   }
 
   const onChartInit = useCallback(
     chart => {
       _chart = chart
-      console.log(_chart.getLegend())
       setLoading(false)
     },
     [props]
@@ -114,12 +114,11 @@ const KeyVis = props => {
 
   const onChangeDateRange = (v: number) => {
     setDateRange(v)
-    _fetchHeatmap()
+    setSelection(null)
   }
 
   const onResetZoom = () => {
-    // TODO
-    _fetchHeatmap()
+    setSelection(null)
   }
 
   const onToggleBrush = () => {
@@ -132,7 +131,7 @@ const KeyVis = props => {
     (selection: HeatmapRange) => {
       setOnBrush(false)
       setAutoFetch(false)
-      _fetchHeatmap(selection)
+      setSelection(selection)
     },
     [props]
   )

@@ -92,7 +92,7 @@ function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): Label[][] {
     for (let keyIdx = 0; keyIdx < keyAxis.length; keyIdx++) {
       const label = keyAxis[keyIdx].labels[groupIdx]
 
-      if (label != lastLabel) {
+      if (label != lastLabel || keyIdx === keyAxis.length - 1) {
         if (startKeyIdx != null && lastLabel != null) {
           result[groupIdx].push({
             val: lastLabel,

@@ -74,7 +74,7 @@ const _Heatmap: React.FunctionComponent<HeatmapProps> = props => {
       }
     }
     init()
-  }, [divRef.current, props])
+  }, [divRef.current, props.data, props.dataTag])
 
   return <div className="heatmap" ref={divRef} />
 }

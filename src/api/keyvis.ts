@@ -2,7 +2,7 @@ import { DataTag, HeatmapData, HeatmapRange } from 'components/KeyVis/heatmap'
 
 export const APIURL = `${process.env.NODE_ENV === 'development' ? 'http://172.16.4.4:2888' : ''}/pd/apis/keyvisual/v1`
 
-export async function fetchHeatmap(selection?: HeatmapRange, type: DataTag = 'written_bytes') {
+export async function fetchHeatmap(selection?: HeatmapRange, type: DataTag = 'written_bytes'): Promise<HeatmapData> {
   let url = `${APIURL}/heatmaps?type=${type}`
 
   if (selection) {
@@ -11,13 +11,7 @@ export async function fetchHeatmap(selection?: HeatmapRange, type: DataTag = 'wr
       .join('')
   }
 
-  try {
-    const data: HeatmapData = await sendRequest(url, 'get')
-
-    return data
-  } catch (e) {
-    throw e
-  }
+  return await sendRequest(url, 'get')
 }
 
 export async function sendRequest(url: string, method: 'get', params?: object) {

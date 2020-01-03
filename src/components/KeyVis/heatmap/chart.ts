@@ -4,8 +4,8 @@ import { HeatmapRange, HeatmapData, DataTag, tagUnit } from '.'
 import { createBuffer } from './buffer'
 import { labelAxisGroup } from './axis/label-axis'
 import { histogram } from './axis/histogram'
-import { getColorScheme, Legend, getLegend, ColorScheme } from './color'
-import { truncateString, clickToCopyBehavior } from './utils'
+import { getColorScheme, ColorScheme } from './color'
+import { withUnit, truncateString, clickToCopyBehavior } from './utils'
 
 import legend from './legend'
 
@@ -13,7 +13,7 @@ const margin = {
   top: 25,
   right: 40,
   bottom: 70,
-  left: 90
+  left: 70
 }
 
 const tooltipSize = {
@@ -54,7 +54,7 @@ export async function heatmapChart(
   let brightness = 1
   let bufferCanvas: HTMLCanvasElement
   let zoomTransform = d3.zoomIdentity
-  let tooltipStatus: TooltipStatus = defaultTooltipStatus
+  let tooltipStatus: TooltipStatus = _.clone(defaultTooltipStatus)
   let focusStatus: FocusStatus | null = null
   let isBrushing = false
   let width = 0
@@ -81,10 +81,6 @@ export async function heatmapChart(
   heatmapChart.resetZoom = function() {
     zoomTransform = d3.zoomIdentity
     heatmapChart()
-  }
-
-  heatmapChart.getLegend = function(): Legend[] {
-    return getLegend(colorScheme)
   }
 
   heatmapChart.size = function(newWidth, newHeight) {
@@ -164,7 +160,6 @@ export async function heatmapChart(
       .attr('width', 60 * window.devicePixelRatio)
       .attr('height', canvasHeight * window.devicePixelRatio)
       .style('margin-top', margin.top + 'px')
-      .style('margin-left', 20 + 'px')
     labelCanvas
       .node()
       .getContext('2d')
@@ -213,12 +208,12 @@ export async function heatmapChart(
 
     const xScale = d3
       .scaleLinear()
-      .domain([0, data.timeAxis.length - 2])
+      .domain([0, data.timeAxis.length - 1])
       .range([0, canvasWidth])
 
     const yScale = d3
       .scaleLinear()
-      .domain([0, data.keyAxis.length - 2])
+      .domain([0, data.keyAxis.length - 1])
       .range([0, canvasHeight])
 
     const xAxis = d3
@@ -386,7 +381,7 @@ export async function heatmapChart(
       renderBrush()
       renderTooltip()
       renderCross()
-      legend(getLegend(colorScheme))
+      legend(colorScheme, dataTag)
     }
 
     function renderHeatmap() {
@@ -503,10 +498,10 @@ export async function heatmapChart(
             brush.move(brushSvg, null)
             const xRescale = zoomTransform.rescaleX(xScale)
             const yRescale = zoomTransform.rescaleY(yScale)
-            const startTime = data.timeAxis[Math.round(xRescale.invert(selection[0][0]))]
-            const endTime = data.timeAxis[Math.round(xRescale.invert(selection[1][0]))]
-            const startKey = data.keyAxis[Math.round(yRescale.invert(selection[0][1]))].key
-            const endKey = data.keyAxis[Math.round(yRescale.invert(selection[1][1]))].key
+            const startTime = data.timeAxis[Math.floor(xRescale.invert(selection[0][0]))]
+            const endTime = data.timeAxis[Math.ceil(xRescale.invert(selection[1][0]))]
+            const startKey = data.keyAxis[Math.floor(yRescale.invert(selection[0][1]))].key
+            const endKey = data.keyAxis[Math.ceil(yRescale.invert(selection[1][1]))].key
 
             onBrush({
               starttime: startTime,
@@ -555,7 +550,7 @@ export async function heatmapChart(
 
         const timeIdx = Math.floor(tooltipStatus.x)
         const keyIdx = Math.floor(tooltipStatus.y)
-        const value = data.data[dataTag][timeIdx][keyIdx]
+        const value = data.data[dataTag]?.[timeIdx]?.[keyIdx]
 
         let valueDiv = tooltipDiv.selectAll('div.value').data([null])
         valueDiv = valueDiv
@@ -570,7 +565,7 @@ export async function heatmapChart(
           .append('p')
           .classed('value', true)
           .merge(valueText)
-          .text(value)
+          .text(withUnit(value))
           .style('color', colorScheme.label(value))
           .style('background-color', colorScheme.backgroud(value))
 

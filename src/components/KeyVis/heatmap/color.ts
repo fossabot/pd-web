@@ -21,12 +21,6 @@ const heatmapColor = d3.interpolateRgbBasis([
   '#ffffb0'
 ])
 
-export type Legend = {
-  val: number
-  color: d3.RGBColor
-  backgroud: d3.RGBColor
-}
-
 export type ColorScale = (val: number) => d3.RGBColor
 export type ColorScheme = {
   backgroud: ColorScale
@@ -45,21 +39,4 @@ export function getColorScheme(maxValue: number, brightness: number): ColorSchem
     label: labelColorScale,
     maxValue: maxValue
   }
-}
-
-export function getLegend(colorScheme: ColorScheme): Legend[] {
-  const count = 6
-  const result: Legend[] = []
-  const logScale = (d3 as any).scaleSymlog().domain([0, colorScheme.maxValue])
-  for (let i = 0; i < count; i++) {
-    let val = Math.floor(logScale.invert(i / (count - 1)))
-    let color = colorScheme.label(val)
-    let backgroud = colorScheme.backgroud(val)
-    result.push({
-      val: val,
-      color: color,
-      backgroud: backgroud
-    })
-  }
-  return result
 }
