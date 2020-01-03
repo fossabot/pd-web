@@ -32,13 +32,6 @@ const KeyVis = props => {
   console.log('Keyvis Init')
 
   useEffect(() => {
-    const load = async () => {
-      if (!chartState) setChartState({ heatmapData: await fetchHeatmap({}, metricType), metricType: metricType })
-    }
-    load()
-  }, [])
-
-  useEffect(() => {
     console.log('side effect in keyvis')
 
     const timerId =
