@@ -73,7 +73,7 @@ const KeyVis = props => {
   const [isLoading, setLoading] = useState(false)
   const [isAutoFetch, setAutoFetch] = useState(false)
   const [isOnBrush, setOnBrush] = useState(false)
-  const [dateRange, setDateRange] = useState(3600 * 12)
+  const [dateRange, setDateRange] = useState(3600 * 6)
   const [brightLevel, setBrightLevel] = useState(1)
   const [metricType, setMetricType] = useState<DataTag>('written_bytes')
 
