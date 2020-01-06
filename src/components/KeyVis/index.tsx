@@ -144,6 +144,7 @@ const KeyVis = props => {
     chart => {
       _chart = chart
       setLoading(false)
+      setBrightLevel(1)
     },
     [props]
   )
