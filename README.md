@@ -1,4 +1,6 @@
 # pd-web (WIP)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpingcap%2Fpd-web.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpingcap%2Fpd-web?ref=badge_shield)
+
 
 PD Web by PingCAP FE.
 
@@ -61,3 +63,6 @@ yarn test
 ## License
 
 PD-Web is under the Apache 2.0 license. 
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpingcap%2Fpd-web.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpingcap%2Fpd-web?ref=badge_large)
